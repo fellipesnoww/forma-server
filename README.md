@@ -6,7 +6,7 @@ Backend do **Forma** — plataforma mobile e web para gerenciamento de treinos e
 
 ## Sobre o produto
 
-O FitTrack resolve a dispersão de dados de quem treina: cadernos, planilhas e apps em inglês que não se conversam. Reúne em um só lugar musculação, atividades livres (natação, futebol, corrida), medidas corporais e progressão visual — tudo em português.
+O Forma resolve a dispersão de dados de quem treina: cadernos, planilhas e apps em inglês que não se conversam. Reúne em um só lugar musculação, atividades livres (natação, futebol, corrida), medidas corporais e progressão visual — tudo em português.
 
 **Diferenciais:**
 
@@ -69,26 +69,33 @@ Com o servidor rodando:
 | http://localhost:3333/docs/json | Documento OpenAPI 3.1 em JSON |
 | http://localhost:3333/docs/yaml | Documento OpenAPI 3.1 em YAML |
 
-A documentação é gerada automaticamente a partir do `schema` declarado em cada rota — não há arquivo OpenAPI mantido à mão. Para novas rotas, declare `tags`, `summary` e os schemas de `body`/`params`/`response`, como em [src/routes/health.ts](src/routes/health.ts):
+A documentação é gerada automaticamente a partir do `schema` declarado em cada rota — não há arquivo OpenAPI mantido à mão. **Os schemas são escritos em Zod**, não em JSON Schema cru: `fastify-type-provider-zod` faz a conversão e ainda dá inferência de tipos no handler (`request.body` já vem tipado).
+
+Tipe o arquivo de rotas como `FastifyPluginAsyncZod` e passe os objetos Zod direto, como em [src/features/health/health.routes.ts](src/features/health/health.routes.ts):
 
 ```ts
-app.get(
-  '/health',
-  {
-    schema: {
-      tags: ['Health'],
-      summary: 'Verifica a disponibilidade do servico',
-      response: {
-        200: {
-          type: 'object',
-          properties: { status: { type: 'string', const: 'ok' } },
-        },
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+
+export const healthRoutes: FastifyPluginAsyncZod = async (app) => {
+  app.get(
+    '',
+    {
+      schema: {
+        tags: ['Health'],
+        summary: 'Verifica a disponibilidade do servico',
+        response: { 200: healthResponseSchema }, // objeto Zod
       },
     },
-  },
-  async () => ({ status: 'ok' }),
-);
+    async () => ({
+      status: 'ok' as const,
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    }),
+  );
+};
 ```
+
+> Com o `serializerCompiler` do Zod ativo, **qualquer schema não-Zod em `response` lança `InvalidSchemaError`**. Use path `''` (e não `'/'`) para a rota raiz da feature: com `'/'` o Fastify registra `/health/` e é essa a forma que aparece no OpenAPI.
 
 Rotas autenticadas devem referenciar o security scheme `bearerAuth`, já declarado em [src/plugins/swagger.ts](src/plugins/swagger.ts):
 
@@ -102,43 +109,127 @@ Novas áreas da API devem registrar sua tag na lista `tags` do mesmo arquivo (ex
 
 ## Scripts
 
-| Script              | Descrição                                        |
-| ------------------- | ------------------------------------------------ |
-| `yarn dev`          | Servidor em modo watch (tsx)                     |
-| `yarn build`        | Compila TypeScript para `dist/`                  |
-| `yarn start`        | Executa a build de `dist/`                       |
-| `yarn lint`         | ESLint (regras Airbnb)                           |
-| `yarn lint:fix`     | ESLint com correção automática                   |
-| `yarn format`       | Formata o projeto com Prettier                   |
-| `yarn format:check` | Verifica formatação sem alterar arquivos         |
-| `yarn db:up`        | Sobe o container do PostgreSQL                   |
-| `yarn db:down`      | Derruba o container (o volume de dados persiste) |
+| Script              | Descrição                                                |
+| ------------------- | -------------------------------------------------------- |
+| `yarn dev`          | Servidor em modo watch (tsx)                             |
+| `yarn build`        | Limpa `dist/`, gera o client Prisma e compila TypeScript |
+| `yarn start`        | Executa a build de `dist/`                               |
+| `yarn typecheck`    | `tsc --noEmit`                                           |
+| `yarn lint`         | ESLint (regras Airbnb)                                   |
+| `yarn lint:fix`     | ESLint com correção automática                           |
+| `yarn format`       | Formata o projeto com Prettier                           |
+| `yarn format:check` | Verifica formatação sem alterar arquivos                 |
+| `yarn db:up`        | Sobe o container do PostgreSQL                           |
+| `yarn db:down`      | Derruba o container (o volume de dados persiste)         |
+| `yarn db:generate`  | Gera o Prisma Client em `src/generated/prisma`           |
+| `yarn db:migrate`   | Cria e aplica migration em desenvolvimento               |
+| `yarn db:deploy`    | Aplica migrations pendentes (produção)                   |
+| `yarn db:seed`      | Executa os seeds de `src/db/seed/`                       |
+| `yarn db:studio`    | Abre o Prisma Studio                                     |
+| `yarn db:reset`     | **Apaga o banco**, reaplica migrations e roda os seeds   |
+| `yarn token:dev`    | Emite um JWT para testar rotas autenticadas (só em dev)  |
 
 ## Estrutura
 
+O código de domínio é organizado **por feature** (vertical slice), não por camada técnica.
+
 ```
+prisma/            # schema.prisma + migrations versionadas
 src/
-  server.ts           # bootstrap: listen + graceful shutdown
-  app.ts              # buildApp(): instância Fastify, plugins e rotas
-  config/env.ts       # carrega e valida variáveis de ambiente (zod, fail-fast)
-  plugins/swagger.ts  # OpenAPI 3.1 + Swagger UI
-  routes/health.ts    # GET /health
+  server.ts        # bootstrap: listen + graceful shutdown
+  app.ts           # buildApp(): plugins globais + registro das features
+  config/env.ts    # carrega e valida variáveis de ambiente (zod, fail-fast)
+  generated/       # Prisma Client (gitignored, recriado por yarn db:generate)
+  types/           # module augmentation do Fastify (prisma, authenticate, user)
+  plugins/         # infra Fastify transversal
+    swagger.ts error-handler.ts prisma.ts auth.ts rate-limit.ts
+  shared/          # código usado por várias features
+    errors/ db/ auth/ media/
+  features/        # uma pasta por bounded context
+    health/ media/
+  db/seed/         # seeds da aplicação
+  dev/             # ferramentas de desenvolvimento (mint-token)
 ```
 
 `app.ts` é separado de `server.ts` para permitir testes que importem `buildApp()` sem abrir porta.
+
+### Template de feature
+
+Cada feature expõe **apenas** seu `index.ts`; nenhuma outra parte do código importa seus arquivos internos.
+
+```
+src/features/<nome>/
+  index.ts              # register<Nome>Routes(app): Promise<void>
+  <nome>.routes.ts      # rotas Fastify + schemas Zod
+  <nome>.service.ts     # regras de negócio
+  <nome>.repository.ts  # acesso a dados (Prisma)
+  <nome>.schemas.ts     # Zod: body, params, query, response
+```
+
+```ts
+// index.ts
+export async function registerMediaRoutes(app: FastifyInstance): Promise<void> {
+  await app.register(mediaRoutes, { prefix: '/media' });
+}
+```
+
+| Regra                      | Diretriz                                                        |
+| -------------------------- | --------------------------------------------------------------- |
+| Colocation                 | Tudo da feature vive em `features/<nome>/`                      |
+| Export público             | Outras features importam só de `features/<nome>/index.ts`       |
+| Sem import interno cruzado | Uma feature nunca importa o `.service.ts` de outra diretamente  |
+| Registro no `app.ts`       | Só via `register<Nome>Routes(app)`                              |
+| `shared/` mínimo           | Só o genuinamente transversal (cliente DB, erros, mídia, roles) |
+| `plugins/`                 | Hooks e decorators do Fastify — nunca lógica de domínio         |
+
+Ao concluir uma etapa, registre a implementação em [`sdd/`](sdd/).
+
+### Erros
+
+Toda resposta de erro usa o mesmo envelope, produzido por [src/plugins/error-handler.ts](src/plugins/error-handler.ts):
+
+```json
+{ "error": { "code": "VALIDATION_ERROR", "message": "...", "details": {} } }
+```
+
+| `code`                   | HTTP | Quando                                            |
+| ------------------------ | ---- | ------------------------------------------------- |
+| `VALIDATION_ERROR`       | 400  | Body/params/query fora do schema Zod              |
+| `UNAUTHORIZED`           | 401  | Token ausente, inválido ou que não é de acesso    |
+| `FORBIDDEN`              | 403  | Papel insuficiente (`requireRole`)                |
+| `NOT_FOUND`              | 404  | Rota ou recurso inexistente                       |
+| `CONFLICT`               | 409  | Violação de unicidade ou de chave estrangeira     |
+| `PAYLOAD_TOO_LARGE`      | 413  | Corpo ou arquivo acima do limite                  |
+| `UNSUPPORTED_MEDIA_TYPE` | 415  | MIME não permitido ou divergente do conteúdo real |
+| `RATE_LIMITED`           | 429  | Limite de requisições excedido                    |
+| `INTERNAL_ERROR`         | 500  | Exceção não mapeada                               |
+
+Em `NODE_ENV=production`, respostas 5xx não expõem `message` original nem `details` — o detalhe fica só no log. Para lançar um erro de domínio, use `AppError` de [src/shared/errors](src/shared/errors/app-error.ts):
+
+```ts
+throw AppError.notFound('Arquivo nao encontrado');
+```
 
 ## Variáveis de ambiente
 
 Definidas em `.env` (não versionado) — use `.env.example` como referência. A aplicação **não sobe** se alguma variável obrigatória estiver ausente ou inválida.
 
-| Variável                                                                | Descrição                               |
-| ----------------------------------------------------------------------- | --------------------------------------- |
-| `NODE_ENV`                                                              | `development` \| `test` \| `production` |
-| `PORT` / `HOST`                                                         | Endereço de escuta do servidor          |
-| `LOG_LEVEL`                                                             | Nível do logger (pino)                  |
-| `ENABLE_SWAGGER`                                                        | `true` \| `false` — expõe `/docs`       |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` | Usadas pelo `docker-compose.yml`        |
-| `DATABASE_URL`                                                          | String de conexão usada pela aplicação  |
+| Variável                                                                | Descrição                                    |
+| ----------------------------------------------------------------------- | -------------------------------------------- |
+| `NODE_ENV`                                                              | `development` \| `test` \| `production`      |
+| `PORT` / `HOST`                                                         | Endereço de escuta do servidor               |
+| `LOG_LEVEL`                                                             | Nível do logger (pino)                       |
+| `ENABLE_SWAGGER`                                                        | `true` \| `false` — expõe `/docs`            |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` | Usadas pelo `docker-compose.yml`             |
+| `DATABASE_URL`                                                          | String de conexão usada pela aplicação       |
+| `DB_HEALTH_DEGRADED_MS`                                                 | Acima disso `/health/db` reporta `degraded`  |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`                              | Segredos JWT — mínimo 32 caracteres          |
+| `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL`                                    | Validade dos tokens (`15m`, `30d`)           |
+| `MEDIA_MAX_SIZE_MB`                                                     | Limite do arquivo **decodificado**           |
+| `MEDIA_ALLOWED_MIME_TYPES`                                              | Whitelist de MIME (CSV)                      |
+| `MEDIA_PUBLIC_BASE_URL`                                                 | Prefixo das URLs de mídia (vazio = relativo) |
+| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW`                                  | Limite global de requisições                 |
+| `RATE_LIMIT_UPLOAD_MAX`                                                 | Limite estrito para upload e auth            |
 
 ## Banco de dados
 
@@ -149,7 +240,22 @@ yarn db:up
 docker compose ps      # postgres deve aparecer como "healthy"
 ```
 
-Nenhum ORM ou migration está configurado ainda: a escolha da camada de acesso a dados vem junto com a modelagem de roles e sessões da Fase 1 do roadmap.
+A camada de acesso a dados é o **Prisma 7**, com o driver adapter `@prisma/adapter-pg`. O schema fica em [prisma/schema.prisma](prisma/schema.prisma) e as migrations em `prisma/migrations/`.
+
+```bash
+yarn db:up          # sobe o Postgres
+yarn db:migrate     # cria e aplica a migration a partir do schema
+yarn db:seed        # popula dados iniciais (idempotente)
+yarn db:studio      # inspeciona os dados no navegador
+```
+
+Pontos específicos do Prisma 7 neste projeto:
+
+- A connection string **não** fica no `datasource` do schema — vem do adapter configurado em [prisma.config.ts](prisma.config.ts), que também aponta o comando de seed.
+- O client é gerado em `src/generated/prisma` (gitignored). `yarn build` roda `prisma generate` antes do `tsc`; após alterar o schema, rode `yarn db:generate`.
+- O cliente compartilhado vive em [src/shared/db/client.ts](src/shared/db/client.ts). Repositories importam esse singleton; rotas podem usar `app.prisma`, decorado por [src/plugins/prisma.ts](src/plugins/prisma.ts) — é o mesmo objeto, o plugin só liga o ciclo de vida (connect no boot, disconnect no shutdown).
+
+`GET /health/db` faz um ping real no banco e reporta a latência.
 
 ## Qualidade de código
 

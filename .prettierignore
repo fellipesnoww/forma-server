@@ -1,4 +1,6 @@
 node_modules/
+src/generated/
+prisma/migrations/
 dist/
 build/
 out/
@@ -10,3 +12,4 @@ yarn.lock
 # Documentos de negocio escritos a mao - formatacao preservada
 escopo-negocio.md
 roadmap-features.md
+roadmap-backend.md

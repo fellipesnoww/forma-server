@@ -1,7 +1,8 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: forma-postgres
+    # Nome distinto do projeto legado health-app-server, que ja usa "forma-postgres"
+    container_name: forma-server-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}

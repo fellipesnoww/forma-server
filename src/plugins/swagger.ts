@@ -1,12 +1,16 @@
-import type { FastifyInstance } from 'fastify';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import type { FastifyInstance } from 'fastify';
+import { jsonSchemaTransform, jsonSchemaTransformObject } from 'fastify-type-provider-zod';
 
 import { env } from '../config/env.js';
 
 /**
  * Registra a geracao do documento OpenAPI (/docs/json) e a UI interativa (/docs).
  * Deve ser registrado antes das rotas para que os schemas sejam coletados.
+ *
+ * `jsonSchemaTransform` converte os schemas Zod declarados nas rotas para JSON Schema —
+ * e por isso que as features escrevem Zod e nunca JSON Schema cru.
  */
 export async function registerSwagger(app: FastifyInstance): Promise<void> {
   await app.register(swagger, {
@@ -20,8 +24,11 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
           'calendario com registro retroativo, progressao, gamificacao e painel administrativo.',
         version: '0.1.0',
       },
-      servers: [{ url: `http://localhost:${env.PORT}`, description: 'Ambiente local' }],
-      tags: [{ name: 'Health', description: 'Disponibilidade e monitoramento do servico' }],
+      servers: [{ url: `http://localhost:${String(env.PORT)}`, description: 'Ambiente local' }],
+      tags: [
+        { name: 'Health', description: 'Disponibilidade e monitoramento do servico' },
+        { name: 'Media', description: 'Upload e download de arquivos' },
+      ],
       components: {
         securitySchemes: {
           bearerAuth: {
@@ -33,14 +40,12 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
         },
       },
     },
+    transform: jsonSchemaTransform,
+    transformObject: jsonSchemaTransformObject,
   });
 
   await app.register(swaggerUi, {
     routePrefix: '/docs',
-    uiConfig: {
-      docExpansion: 'list',
-      deepLinking: true,
-      persistAuthorization: true,
-    },
+    uiConfig: { docExpansion: 'list', deepLinking: true, persistAuthorization: true },
   });
 }

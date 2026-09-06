@@ -1,0 +1,32 @@
+// Schema do Prisma para o Forma.
+// Convencao: modelos em PascalCase no client, tabelas/colunas em snake_case no Postgres (@map/@@map).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  runtime             = "nodejs"
+  moduleFormat        = "esm"
+  // moduleResolution NodeNext exige a extensao .js nos imports relativos do codigo gerado
+  importFileExtension = "js"
+}
+
+// Prisma 7 removeu `url` daqui: a conexao vem do driver adapter definido em prisma.config.ts
+datasource db {
+  provider = "postgresql"
+}
+
+/// Arquivo binario armazenado no proprio Postgres (bytea).
+/// Fase 0 nao usa S3/R2: o client envia base64, o servidor decodifica e persiste aqui.
+/// `owner_id` referencia o futuro `users.id` (Fase 1.1) e por isso ainda nao tem FK.
+model MediaAsset {
+  id        String   @id @default(uuid()) @db.Uuid
+  ownerId   String?  @map("owner_id") @db.Uuid
+  mimeType  String   @map("mime_type") @db.VarChar(100)
+  sizeBytes Int      @map("size_bytes")
+  filename  String?  @db.VarChar(255)
+  data      Bytes
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([ownerId, createdAt])
+  @@map("media_assets")
+}

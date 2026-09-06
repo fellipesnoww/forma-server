@@ -4,6 +4,9 @@ node_modules/
 package-lock.json
 pnpm-lock.yaml
 
+# Codigo gerado pelo Prisma (recriado por `yarn db:generate`)
+src/generated/
+
 # Build
 dist/
 build/
