@@ -4,7 +4,7 @@
 
 ## 1. Visão geral do produto
 
-**FitTrack** é uma plataforma mobile e web para gerenciamento completo de treinos e atividades físicas, com sistema de perfis hierárquicos (usuário, administrador e super user), gamificação via conquistas e desafios, e acompanhamento detalhado de evolução física e de desempenho.
+**Forma** é uma plataforma mobile e web para gerenciamento completo de treinos e atividades físicas, com sistema de perfis hierárquicos (usuário, administrador e super user), gamificação via conquistas e desafios, e acompanhamento detalhado de evolução física e de desempenho.
 
 **Missão:** ajudar qualquer pessoa a treinar com mais consistência, clareza e motivação — independentemente de ter ou não um personal trainer.
 

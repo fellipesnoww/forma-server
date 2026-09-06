@@ -1,0 +1,41 @@
+# Dependencias
+node_modules/
+# O gerenciador do projeto e o yarn - yarn.lock e versionado
+package-lock.json
+pnpm-lock.yaml
+
+# Build
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Testes
+coverage/
+.nyc_output/
+
+# Variaveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.idea/
+.vscode/
+*.swp
+
+# Temporarios
+tmp/
+temp/

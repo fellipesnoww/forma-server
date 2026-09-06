@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+out/
+coverage/
+*.log
+yarn.lock
+.husky/
+
+# Documentos de negocio escritos a mao - formatacao preservada
+escopo-negocio.md
+roadmap-features.md

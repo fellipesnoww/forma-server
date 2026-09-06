@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+out/
+coverage/
+.git/
+.github/
+.husky/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+.idea/
+.vscode/
