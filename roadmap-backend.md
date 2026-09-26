@@ -13,7 +13,7 @@
 | Fase | Status |
 |---|---|
 | 0 — Fundação técnica | 🟨 parcial (Dockerfile, staging e testes pendentes) |
-| 1 — MVP Core | 🟨 parcial (1.1 concluída; 1.0, 1.2–1.6 pendentes) |
+| 1 — MVP Core | 🟨 parcial (1.1–1.2 concluídas; 1.0, 1.3–1.6 pendentes) |
 | 2 — Completude do usuário | ⬜ |
 | 3 — Painel administrativo | ⬜ |
 | 4 — Gamificação | ⬜ |
@@ -360,33 +360,37 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 ### 1.2 Perfil do usuário
 
+> Avatar reaproveita `dbMediaStorage` da Fase 0 como está — sem resize 512×512 nem limite
+> dedicado de 2 MB (mesmo descope de resize/WebP já registrado na Fase 0). Ver
+> [`sdd/1.2-perfil.md`](sdd/1.2-perfil.md) › Pendências.
+
 #### Feature package
 
-- [ ] Criar `features/profile/` (`index.ts`, routes, service, repository, schemas)
+- [x] Criar `features/profile/` (`index.ts`, routes, service, repository, schemas)
 
 #### SDD
 
-- [ ] `sdd/1.2-perfil.md` — documentar implementação
+- [x] `sdd/1.2-perfil.md` — documentar implementação
 
 #### Modelagem
 
-- [ ] Campos atuais em `user_profiles`: `weight_kg`, `height_cm`, `waist_cm`, `chest_cm`
-- [ ] Migration: tabela `body_measurements` (histórico append-only)
+- [x] Campos atuais em `user_profiles`: `weight_kg`, `height_cm`, `waist_cm`, `chest_cm`
+- [x] Migration: tabela `body_measurements` (histórico append-only)
 
 #### Endpoints
 
-- [ ] `GET /profile` — perfil + medidas atuais
-- [ ] `PATCH /profile` — atualiza nome e medidas atuais
-- [ ] `POST /profile/avatar` — upload, compressão, retorna URL
-- [ ] `GET /profile/measurements` — histórico paginado (`?from=&to=`)
-- [ ] `POST /profile/measurements` — novo registro de medidas
+- [x] `GET /profile` — perfil + medidas atuais
+- [x] `PATCH /profile` — atualiza nome e medidas atuais
+- [x] `POST /profile/avatar` — upload, retorna URL — **parcial:** sem compressão/resize (ver nota acima)
+- [x] `GET /profile/measurements` — histórico paginado (`?from=&to=&page=&limit=`)
+- [x] `POST /profile/measurements` — novo registro de medidas
 
 #### Regras de negócio
 
-- [ ] `POST /profile/measurements` atualiza campos atuais em `user_profiles`
-- [ ] Validação: peso/altura/cintura/peitoral > 0 (kg, cm)
-- [ ] Avatar: resize máx. 512×512, limite ~2 MB
-- [ ] Documentação OpenAPI (tag `Perfil`)
+- [x] `POST /profile/measurements` atualiza campos atuais em `user_profiles`
+- [x] Validação: peso/altura/cintura/peitoral > 0 (kg, cm)
+- [ ] Avatar: resize máx. 512×512, limite ~2 MB — fora de escopo deste PR (ver nota acima)
+- [x] Documentação OpenAPI (tag `Perfil`)
 
 ---
 
@@ -955,7 +959,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 3. [ ] **1.3** — Exercises (seed) + custom exercises
 4. [ ] **1.4** — Workout sheets
 5. [ ] **1.5** — Workout sessions + upload foto
-6. [ ] **1.2** — Body measurements history
+6. [x] **1.2** — Body measurements history
 7. [ ] **2.1** — Free activities + activity types
 8. [ ] **2.2–2.3** — Calendar + validação retroativa
 9. [ ] **2.4** — Progress endpoints

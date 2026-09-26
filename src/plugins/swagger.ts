@@ -29,6 +29,7 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
         { name: 'Health', description: 'Disponibilidade e monitoramento do servico' },
         { name: 'Auth', description: 'Registro, login, OAuth e sessao' },
         { name: 'Media', description: 'Upload e download de arquivos' },
+        { name: 'Perfil', description: 'Dados de perfil e medidas corporais' },
       ],
       components: {
         securitySchemes: {

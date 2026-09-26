@@ -7,6 +7,7 @@ import { env } from './config/env.js';
 import { registerAuthRoutes } from './features/auth/index.js';
 import { registerHealthRoutes } from './features/health/index.js';
 import { registerMediaRoutes } from './features/media/index.js';
+import { registerProfileRoutes } from './features/profile/index.js';
 import authPlugin from './plugins/auth.js';
 import errorHandlerPlugin from './plugins/error-handler.js';
 import prismaPlugin from './plugins/prisma.js';
@@ -61,6 +62,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerHealthRoutes(app);
   await registerAuthRoutes(app);
   await registerMediaRoutes(app);
+  await registerProfileRoutes(app);
 
   return app;
 }

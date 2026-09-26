@@ -73,18 +73,24 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  profile UserProfile?
+  profile           UserProfile?
+  bodyMeasurements  BodyMeasurement[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
 }
 
 /// Dados de perfil separados de `users` porque a Fase 1.2 adiciona medidas corporais aqui
-/// sem inflar a tabela de autenticacao.
+/// sem inflar a tabela de autenticacao. `weightKg`..`chestCm` guardam sempre o valor mais
+/// recente; o historico completo fica em `BodyMeasurement`.
 model UserProfile {
   userId                String    @id @map("user_id") @db.Uuid
   displayName           String?   @map("display_name") @db.VarChar(120)
   avatarUrl             String?   @map("avatar_url")
+  weightKg              Float?    @map("weight_kg")
+  heightCm              Float?    @map("height_cm")
+  waistCm               Float?    @map("waist_cm")
+  chestCm               Float?    @map("chest_cm")
   onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(3)
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -92,4 +98,21 @@ model UserProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_profiles")
+}
+
+/// Historico append-only de medidas corporais (Fase 1.2). Cada `POST /profile/measurements`
+/// cria uma linha aqui e sincroniza os campos atuais em `UserProfile`.
+model BodyMeasurement {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  weightKg  Float?   @map("weight_kg")
+  heightCm  Float?   @map("height_cm")
+  waistCm   Float?   @map("waist_cm")
+  chestCm   Float?   @map("chest_cm")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("body_measurements")
 }
