@@ -35,6 +35,10 @@ const envSchema = z
     JWT_ACCESS_TTL: z.string().min(1).default('15m'),
     JWT_REFRESH_TTL: z.string().min(1).default('30d'),
 
+    // OAuth (Fase 1.1): usados como `aud` ao verificar o id/identity token do provedor
+    GOOGLE_CLIENT_ID: z.string().min(1),
+    APPLE_CLIENT_ID: z.string().min(1),
+
     // Midia: Fase 0 grava o binario no proprio Postgres (bytea), sem S3/R2
     MEDIA_MAX_SIZE_MB: z.coerce.number().positive().default(5),
     MEDIA_ALLOWED_MIME_TYPES: csvList('image/jpeg,image/png,image/webp'),

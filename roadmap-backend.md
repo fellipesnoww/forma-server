@@ -13,7 +13,7 @@
 | Fase | Status |
 |---|---|
 | 0 — Fundação técnica | 🟨 parcial (Dockerfile, staging e testes pendentes) |
-| 1 — MVP Core | ⬜ |
+| 1 — MVP Core | 🟨 parcial (1.1 concluída; 1.0, 1.2–1.6 pendentes) |
 | 2 — Completude do usuário | ⬜ |
 | 3 — Painel administrativo | ⬜ |
 | 4 — Gamificação | ⬜ |
@@ -294,60 +294,67 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 ### 1.1 Autenticação
 
+> Item 1.0 (desacoplar Prisma) foi **deliberadamente pulado** para esta etapa — decisão do
+> time. `features/auth/` usa o singleton `prisma` diretamente (mesmo padrão de
+> `shared/media/`), sem introduzir acoplamento novo. Ver [`sdd/1.1-autenticacao.md`](sdd/1.1-autenticacao.md).
+
 #### Feature package
 
-- [ ] Criar `features/auth/` (`index.ts`, `auth.routes.ts`, `auth.service.ts`, `auth.repository.ts`, `auth.schemas.ts`)
+- [x] Criar `features/auth/` (`index.ts`, `auth.routes.ts`, `auth.service.ts`, `auth.repository.ts`, `auth.schemas.ts`)
 
 #### SDD
 
-- [ ] `sdd/1.1-autenticacao.md` — documentar implementação (OAuth, email/senha, vinculação de contas)
+- [x] `sdd/1.1-autenticacao.md` — documentar implementação (OAuth, email/senha, vinculação de contas)
 
 #### Modelagem
 
-- [ ] Migration: tabela `users` (`email`, `password_hash`, `oauth_provider`, `oauth_subject`, `role`, `status`)
-- [ ] Migration: tabela `user_profiles` (`display_name`, `avatar_url`, `onboarding_completed_at`)
-- [ ] Enum ou constraint: `role` → `user` | `admin` | `super_user`
-- [ ] Enum ou constraint: `status` → `active` | `inactive` | `banned`
-- [ ] Índice único: `email` (case-insensitive)
-- [ ] Índice único: `(oauth_provider, oauth_subject)` (nullable até vincular OAuth)
-- [ ] Campo `password_hash` nullable (contas somente OAuth não possuem senha)
+- [x] Migration: tabela `users` (`email`, `password_hash`, `oauth_provider`, `oauth_subject`, `role`, `status`)
+- [x] Migration: tabela `user_profiles` (`display_name`, `avatar_url`, `onboarding_completed_at`)
+- [x] Enum ou constraint: `role` → `user` | `admin` | `super_user`
+- [x] Enum ou constraint: `status` → `active` | `inactive` | `banned`
+- [x] Índice único: `email` (case-insensitive)
+- [x] Índice único: `(oauth_provider, oauth_subject)` (nullable até vincular OAuth)
+- [x] Campo `password_hash` nullable (contas somente OAuth não possuem senha)
 
 #### Variáveis de ambiente
 
-- [ ] Credenciais OAuth Google
-- [ ] Credenciais OAuth Apple
-- [ ] Secrets JWT (access + refresh)
+- [x] Credenciais OAuth Google
+- [x] Credenciais OAuth Apple
+- [x] Secrets JWT (access + refresh)
 
 #### Endpoints
 
-- [ ] `POST /auth/register` — cria conta com email e senha (+ perfil mínimo)
-- [ ] `POST /auth/login` — autentica com email e senha, retorna JWT + perfil
-- [ ] `POST /auth/google` — troca `id_token` Google por JWT + perfil (vincula conta existente se email coincidir)
-- [ ] `POST /auth/apple` — troca `identity_token` Apple por JWT + perfil (vincula conta existente se email coincidir)
-- [ ] `POST /auth/refresh` — renova access token
-- [ ] `POST /auth/logout` — invalida refresh token
-- [ ] `GET /auth/me` — usuário autenticado + perfil resumido
+- [x] `POST /auth/register` — cria conta com email e senha (+ perfil mínimo) — implementado como `POST /auth`
+- [x] `POST /auth/login` — autentica com email e senha, retorna JWT + perfil
+- [x] `POST /auth/google` — troca `id_token` Google por JWT + perfil (vincula conta existente se email coincidir)
+- [x] `POST /auth/apple` — troca `identity_token` Apple por JWT + perfil (vincula conta existente se email coincidir)
+- [x] `POST /auth/refresh` — renova access token
+- [x] `POST /auth/logout` — invalida refresh token
+- [x] `GET /auth/me` — usuário autenticado + perfil resumido
 
 #### Regras de negócio
 
-- [ ] Upsert transacional: primeiro login OAuth cria `users` + `user_profiles`
-- [ ] Cadastro email/senha: hash com bcrypt ou argon2; nunca persistir senha em plain text
-- [ ] Validação de senha: comprimento mínimo e regras básicas (documentar no schema Zod)
-- [ ] `POST /auth/register` rejeita email já cadastrado (409)
-- [ ] **Vinculação OAuth → conta email/senha:** se OAuth retornar email já existente (conta criada via register), **atualizar** o mesmo `users` — preencher `oauth_provider` + `oauth_subject` — em vez de criar novo usuário
-- [ ] Vinculação preserva dados existentes (perfil, planilhas, histórico); login OAuth passa a funcionar para a mesma conta
-- [ ] Conflito: email OAuth ≠ email da conta logada → rejeitar ou exigir fluxo explícito de merge (documentar decisão)
-- [ ] Conta vinculada pode autenticar por email/senha **ou** OAuth
-- [ ] Role padrão `user` em novos cadastros
-- [ ] Usuário `banned` ou `inactive` → 403 em rotas autenticadas
-- [ ] Documentação OpenAPI (tag `Auth`)
+- [x] Upsert transacional: primeiro login OAuth cria `users` + `user_profiles`
+- [x] Cadastro email/senha: hash com bcrypt ou argon2; nunca persistir senha em plain text — usado argon2
+- [x] Validação de senha: comprimento mínimo e regras básicas (documentar no schema Zod)
+- [x] `POST /auth/register` rejeita email já cadastrado (409)
+- [x] **Vinculação OAuth → conta email/senha:** se OAuth retornar email já existente (conta criada via register), **atualizar** o mesmo `users` — preencher `oauth_provider` + `oauth_subject` — em vez de criar novo usuário
+- [x] Vinculação preserva dados existentes (perfil, planilhas, histórico); login OAuth passa a funcionar para a mesma conta
+- [x] Conflito: email OAuth ≠ email da conta logada → rejeitar ou exigir fluxo explícito de merge (documentar decisão) — não aplicável ao conjunto de endpoints entregue (nenhum é vinculação autenticada); documentado em `sdd/1.1-autenticacao.md`
+- [x] Conta vinculada pode autenticar por email/senha **ou** OAuth
+- [x] Role padrão `user` em novos cadastros
+- [x] Usuário `banned` ou `inactive` → 403 em rotas autenticadas
+- [x] Documentação OpenAPI (tag `Auth`)
 
 #### Testes
 
-- [ ] Register → login email/senha → JWT válido
-- [ ] Register com email duplicado → 409
-- [ ] Register → OAuth (mesmo email) → mesma conta atualizada com `oauth_provider`/`oauth_subject`
-- [ ] Após vinculação OAuth: login email/senha e login OAuth retornam o mesmo `user_id`
+> Sem Vitest configurado no repositório (débito da Fase 0). Os cenários abaixo foram
+> verificados manualmente via curl durante a implementação — ver `sdd/1.1-autenticacao.md`.
+
+- [x] Register → login email/senha → JWT válido
+- [x] Register com email duplicado → 409
+- [ ] Register → OAuth (mesmo email) → mesma conta atualizada com `oauth_provider`/`oauth_subject` — lógica implementada, não exercitada ponta a ponta (requer client id real de Google/Apple)
+- [ ] Após vinculação OAuth: login email/senha e login OAuth retornam o mesmo `user_id` — idem acima
 
 ---
 
@@ -944,7 +951,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 Marque na sequência abaixo para minimizar retrabalho:
 
 1. [x] **Fase 0** — ORM, migrations, auth plugin, media service
-2. [ ] **1.1** — Auth (OAuth + email/senha + vinculação de contas)
+2. [x] **1.1** — Auth (OAuth + email/senha + vinculação de contas)
 3. [ ] **1.3** — Exercises (seed) + custom exercises
 4. [ ] **1.4** — Workout sheets
 5. [ ] **1.5** — Workout sessions + upload foto

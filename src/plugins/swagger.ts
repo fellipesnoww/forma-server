@@ -27,6 +27,7 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
       servers: [{ url: `http://localhost:${String(env.PORT)}`, description: 'Ambiente local' }],
       tags: [
         { name: 'Health', description: 'Disponibilidade e monitoramento do servico' },
+        { name: 'Auth', description: 'Registro, login, OAuth e sessao' },
         { name: 'Media', description: 'Upload e download de arquivos' },
       ],
       components: {

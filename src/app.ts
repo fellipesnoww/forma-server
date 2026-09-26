@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 
 import { env } from './config/env.js';
+import { registerAuthRoutes } from './features/auth/index.js';
 import { registerHealthRoutes } from './features/health/index.js';
 import { registerMediaRoutes } from './features/media/index.js';
 import authPlugin from './plugins/auth.js';
@@ -58,6 +59,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Features expoem apenas register<Nome>Routes; nunca importar seus arquivos internos aqui
   await registerHealthRoutes(app);
+  await registerAuthRoutes(app);
   await registerMediaRoutes(app);
 
   return app;

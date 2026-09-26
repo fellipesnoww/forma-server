@@ -9,6 +9,7 @@ assumidas — sempre no passado, sempre no mesmo commit da implementação.
 | Etapa                     | Documento                                                | Data       |
 | ------------------------- | -------------------------------------------------------- | ---------- |
 | Fase 0 — Fundação técnica | [fase-0-fundacao-tecnica.md](fase-0-fundacao-tecnica.md) | 2026-09-06 |
+| 1.1 — Autenticação        | [1.1-autenticacao.md](1.1-autenticacao.md)               | 2026-09-26 |
 
 ## Como criar um novo documento
 

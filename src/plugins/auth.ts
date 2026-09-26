@@ -3,17 +3,13 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { env } from '../config/env.js';
-import { hasRole, isRole, type Role } from '../shared/auth/index.js';
+import { findUserStatus, hasRole, isRole, type Role } from '../shared/auth/index.js';
 import { AppError } from '../shared/errors/index.js';
 
 /**
- * Infraestrutura de autenticacao/autorizacao.
- *
- * A Fase 0 nao expoe rotas /auth (isso e 1.1): aqui ficam apenas os decorators que as
- * features consomem. `authenticate` valida o token exclusivamente pelas claims — nao
- * consulta o banco, porque a tabela `users` so existe a partir da Fase 1.1.
- *
- * Quando `users` existir, a checagem de `status` (banned/inactive -> 403) entra aqui.
+ * Infraestrutura de autenticacao/autorizacao. `authenticate` valida o access token pelas
+ * claims e depois confirma em `users` que a conta segue `active` — a checagem de status
+ * vive aqui (nao em `features/auth/`) para nao ter que ser repetida em toda rota protegida.
  */
 async function authPlugin(app: FastifyInstance): Promise<void> {
   await app.register(jwt, {
@@ -37,6 +33,18 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
 
     if (!isRole(request.user.role)) {
       throw AppError.unauthorized('Token de acesso invalido');
+    }
+
+    // Consulta a conta a cada requisicao: e o unico jeito de reagir a um ban/desativacao
+    // acontecidos depois que o access token foi emitido (o token em si so expira em 15 min).
+    const status = await findUserStatus(request.user.sub);
+
+    if (!status) {
+      throw AppError.unauthorized();
+    }
+
+    if (status !== 'active') {
+      throw AppError.forbidden('Conta banida ou inativa');
     }
   });
 

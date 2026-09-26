@@ -30,3 +30,66 @@ model MediaAsset {
   @@index([ownerId, createdAt])
   @@map("media_assets")
 }
+
+enum Role {
+  user
+  admin
+  super_user
+
+  @@map("role")
+}
+
+enum UserStatus {
+  active
+  inactive
+  banned
+
+  @@map("user_status")
+}
+
+enum OAuthProvider {
+  google
+  apple
+
+  @@map("oauth_provider")
+}
+
+/// Conta de usuario (Fase 1.1). Email/senha e OAuth (Google/Apple) convivem na mesma linha:
+/// uma conta criada por um metodo pode ser vinculada ao outro sem duplicar o usuario.
+/// `email` e sempre normalizado (lowercase) pela camada de aplicacao antes de gravar/ler —
+/// evita depender de `citext` ou indice de expressao so para unicidade case-insensitive.
+model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  email         String         @unique @db.VarChar(255)
+  passwordHash  String?        @map("password_hash")
+  oauthProvider OAuthProvider? @map("oauth_provider")
+  oauthSubject  String?        @map("oauth_subject") @db.VarChar(255)
+  role          Role           @default(user)
+  status        UserStatus     @default(active)
+  /// Incrementado no logout; refresh tokens carregam o valor vigente no momento da emissao
+  /// (`tv`) e sao recusados se nao baterem — invalida toda sessao sem precisar de uma
+  /// tabela de refresh tokens.
+  tokenVersion  Int            @default(0) @map("token_version")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  profile UserProfile?
+
+  @@unique([oauthProvider, oauthSubject])
+  @@map("users")
+}
+
+/// Dados de perfil separados de `users` porque a Fase 1.2 adiciona medidas corporais aqui
+/// sem inflar a tabela de autenticacao.
+model UserProfile {
+  userId                String    @id @map("user_id") @db.Uuid
+  displayName           String?   @map("display_name") @db.VarChar(120)
+  avatarUrl             String?   @map("avatar_url")
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(3)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
