@@ -1,18 +1,17 @@
 /**
  * Ponto de entrada dos seeds (`yarn db:seed`, configurado em prisma.config.ts).
  *
- * A Fase 0 nao tem dados iniciais: o unico modelo e `media_assets`, que so recebe upload.
- * Os primeiros seeders chegam na Fase 1.3 (grupos musculares e catalogo de exercicios).
  * Cada seeder deve ser idempotente — `yarn db:seed` pode rodar varias vezes no mesmo banco.
  */
 import { prisma } from '../../shared/db/client.js';
+import { seedExercises } from './exercises.seed.js';
 
 interface Seeder {
   name: string;
   run: () => Promise<void>;
 }
 
-const seeders: Seeder[] = [];
+const seeders: Seeder[] = [{ name: 'grupos musculares + exercicios (1.3)', run: seedExercises }];
 
 async function main(): Promise<void> {
   if (seeders.length === 0) {

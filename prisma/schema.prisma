@@ -75,6 +75,8 @@ model User {
 
   profile           UserProfile?
   bodyMeasurements  BodyMeasurement[]
+  customExercises   CustomExercise[]
+  workoutSheets     WorkoutSheet[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
@@ -115,4 +117,107 @@ model BodyMeasurement {
 
   @@index([userId, createdAt])
   @@map("body_measurements")
+}
+
+/// Catalogo global de grupos musculares (Fase 1.3). So admin gerencia (Fase 3); usuario le.
+model MuscleGroup {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(80)
+  slug String @unique @db.VarChar(80)
+
+  exercises       Exercise[]
+  customExercises CustomExercise[]
+
+  @@map("muscle_groups")
+}
+
+/// Catalogo global de exercicios (Fase 1.3), somente leitura para `user`. Edicao fica para
+/// o painel admin (Fase 3) — aqui so existe leitura e o seed inicial.
+model Exercise {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(160)
+  muscleGroupId String?  @map("muscle_group_id") @db.Uuid
+  isActive      Boolean  @default(true) @map("is_active")
+  mediaUrl      String?  @map("media_url")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  muscleGroup     MuscleGroup?     @relation(fields: [muscleGroupId], references: [id])
+  sheetExercises  SheetExercise[]
+
+  @@unique([name])
+  @@index([muscleGroupId])
+  @@map("exercises")
+}
+
+/// Exercicio personalizado (Fase 1.3), isolado por `userId` — nunca visivel a outro usuario.
+/// Soft delete via `deletedAt` porque pode estar referenciado em planilhas/sessoes existentes.
+model CustomExercise {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  name          String    @db.VarChar(160)
+  muscleGroupId String?   @map("muscle_group_id") @db.Uuid
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  muscleGroup    MuscleGroup?     @relation(fields: [muscleGroupId], references: [id])
+  sheetExercises SheetExercise[]
+
+  @@index([userId, deletedAt])
+  @@map("custom_exercises")
+}
+
+/// Planilha de treino do usuario (Fase 1.4). Soft delete: planilhas antigas podem ser
+/// referenciadas por sessoes ja registradas (Fase 1.5).
+model WorkoutSheet {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  name      String    @db.VarChar(120)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days SheetDay[]
+
+  @@index([userId, deletedAt])
+  @@map("workout_sheets")
+}
+
+/// Dia de treino dentro de uma planilha. `weekday` e unico por planilha (0 = domingo .. 6 = sabado).
+model SheetDay {
+  id        String   @id @default(uuid()) @db.Uuid
+  sheetId   String   @map("sheet_id") @db.Uuid
+  weekday   Int
+  order     Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  sheet     WorkoutSheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  exercises SheetExercise[]
+
+  @@unique([sheetId, weekday])
+  @@map("sheet_days")
+}
+
+/// Exercicio dentro de um dia de planilha. Referencia exatamente um de `exerciseId`
+/// (catalogo) ou `customExerciseId` (do dono da planilha) — validado na camada de servico,
+/// nao via CHECK constraint (Prisma nao gera CHECK a partir do schema; a app ja precisa
+/// validar posse do custom exercise, entao a exclusividade fica no mesmo lugar).
+model SheetExercise {
+  id               String  @id @default(uuid()) @db.Uuid
+  dayId            String  @map("day_id") @db.Uuid
+  exerciseId       String? @map("exercise_id") @db.Uuid
+  customExerciseId String? @map("custom_exercise_id") @db.Uuid
+  sortOrder        Int     @map("sort_order")
+  targetSets       Int?    @map("target_sets")
+  targetReps       Int?    @map("target_reps")
+
+  day            SheetDay        @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  exercise       Exercise?       @relation(fields: [exerciseId], references: [id])
+  customExercise CustomExercise? @relation(fields: [customExerciseId], references: [id])
+
+  @@index([dayId, sortOrder])
+  @@map("sheet_exercises")
 }

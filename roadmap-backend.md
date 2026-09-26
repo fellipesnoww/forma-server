@@ -13,7 +13,7 @@
 | Fase | Status |
 |---|---|
 | 0 — Fundação técnica | 🟨 parcial (Dockerfile, staging e testes pendentes) |
-| 1 — MVP Core | 🟨 parcial (1.1–1.2 concluídas; 1.0, 1.3–1.6 pendentes) |
+| 1 — MVP Core | 🟨 parcial (1.1–1.4 concluídas; 1.0, 1.5–1.6 pendentes) |
 | 2 — Completude do usuário | ⬜ |
 | 3 — Painel administrativo | ⬜ |
 | 4 — Gamificação | ⬜ |
@@ -391,6 +391,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [x] Validação: peso/altura/cintura/peitoral > 0 (kg, cm)
 - [ ] Avatar: resize máx. 512×512, limite ~2 MB — fora de escopo deste PR (ver nota acima)
 - [x] Documentação OpenAPI (tag `Perfil`)
+- [ ] Testes automatizados — Vitest não configurado (débito da Fase 0); verificado manualmente via curl, ver `sdd/1.2-perfil.md`
 
 ---
 
@@ -398,35 +399,36 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Feature package
 
-- [ ] Criar `features/exercises/` (`index.ts`, routes, service, repository, schemas)
+- [x] Criar `features/exercises/` (`index.ts`, routes, service, repository, schemas)
 
 #### SDD
 
-- [ ] `sdd/1.3-exercicios.md` — documentar implementação
+- [x] `sdd/1.3-exercicios.md` — documentar implementação
 
 #### Modelagem
 
-- [ ] Migration: tabela `muscle_groups` (`name`, `slug`)
-- [ ] Migration: tabela `exercises` (catálogo global, `is_active`, `media_url`)
-- [ ] Migration: tabela `custom_exercises` (`user_id`, `deleted_at`)
+- [x] Migration: tabela `muscle_groups` (`name`, `slug`)
+- [x] Migration: tabela `exercises` (catálogo global, `is_active`, `media_url`)
+- [x] Migration: tabela `custom_exercises` (`user_id`, `deleted_at`)
 
 #### Seed
 
-- [ ] Seed: grupos musculares
-- [ ] Seed: ≥ 80 exercícios categorizados
+- [x] Seed: grupos musculares
+- [x] Seed: ≥ 80 exercícios categorizados
 
 #### Endpoints (usuário)
 
-- [ ] `GET /exercises` — catálogo ativo + custom (`?muscle_group=&q=`)
-- [ ] `POST /exercises/custom` — cria exercício personalizado
-- [ ] `PATCH /exercises/custom/:id` — edita (somente dono)
-- [ ] `DELETE /exercises/custom/:id` — soft delete (somente dono)
+- [x] `GET /exercises` — catálogo ativo + custom (`?muscle_group=&q=`)
+- [x] `POST /exercises/custom` — cria exercício personalizado
+- [x] `PATCH /exercises/custom/:id` — edita (somente dono)
+- [x] `DELETE /exercises/custom/:id` — soft delete (somente dono)
 
 #### Regras de negócio
 
-- [ ] Custom exercises isolados por `user_id`
-- [ ] Catálogo padrão somente leitura para `user`
-- [ ] Documentação OpenAPI (tag `Exercicios`)
+- [x] Custom exercises isolados por `user_id`
+- [x] Catálogo padrão somente leitura para `user`
+- [x] Documentação OpenAPI (tag `Exercicios`)
+- [ ] Testes automatizados — Vitest não configurado (débito da Fase 0); verificado manualmente via curl, ver `sdd/1.3-exercicios.md`
 
 ---
 
@@ -434,33 +436,34 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Feature package
 
-- [ ] Criar `features/workout-sheets/` (`index.ts`, routes, service, repository, schemas)
+- [x] Criar `features/workout-sheets/` (`index.ts`, routes, service, repository, schemas)
 
 #### SDD
 
-- [ ] `sdd/1.4-planilhas.md` — documentar implementação
+- [x] `sdd/1.4-planilhas.md` — documentar implementação
 
 #### Modelagem
 
-- [ ] Migration: tabela `workout_sheets` (`user_id`, `name`, `deleted_at`)
-- [ ] Migration: tabela `sheet_days` (`sheet_id`, `weekday`, `order`)
-- [ ] Migration: tabela `sheet_exercises` (`exercise_id` ou `custom_exercise_id`, `sort_order`, defaults)
+- [x] Migration: tabela `workout_sheets` (`user_id`, `name`, `deleted_at`)
+- [x] Migration: tabela `sheet_days` (`sheet_id`, `weekday`, `order`)
+- [x] Migration: tabela `sheet_exercises` (`exercise_id` ou `custom_exercise_id`, `sort_order`, defaults)
 
 #### Endpoints
 
-- [ ] `GET /workout-sheets` — lista planilhas do usuário
-- [ ] `POST /workout-sheets` — cria planilha + dias + exercícios
-- [ ] `GET /workout-sheets/:id` — detalhe completo
-- [ ] `PATCH /workout-sheets/:id` — atualiza nome, dias, exercícios
-- [ ] `DELETE /workout-sheets/:id` — soft delete
-- [ ] `PATCH /workout-sheets/:id/reorder` — reordena exercícios por dia
+- [x] `GET /workout-sheets` — lista planilhas do usuário
+- [x] `POST /workout-sheets` — cria planilha + dias + exercícios
+- [x] `GET /workout-sheets/:id` — detalhe completo
+- [x] `PATCH /workout-sheets/:id` — atualiza nome, dias, exercícios
+- [x] `DELETE /workout-sheets/:id` — soft delete
+- [x] `PATCH /workout-sheets/:id/reorder` — reordena exercícios por dia
 
 #### Regras de negócio
 
-- [ ] Ownership: planilha pertence ao usuário autenticado
-- [ ] Validar referência a exercício (catálogo ou custom do mesmo usuário)
-- [ ] `weekday` único por planilha
-- [ ] Documentação OpenAPI (tag `Planilhas`)
+- [x] Ownership: planilha pertence ao usuário autenticado (queries filtram por `user_id`, dono inexistente vira 404)
+- [x] Validar referência a exercício (catálogo ativo ou custom do mesmo usuário) — validado na service, sem CHECK constraint (ver `sdd/1.4-planilhas.md`)
+- [x] `weekday` único por planilha (`@@unique([sheetId, weekday])` + validação no Zod)
+- [x] Documentação OpenAPI (tag `Planilhas`)
+- [ ] Testes automatizados — Vitest não configurado (débito da Fase 0); verificado manualmente via curl, ver `sdd/1.4-planilhas.md`
 
 ---
 
@@ -497,6 +500,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Compressão de foto e associação à sessão
 - [ ] Idempotência em `complete`
 - [ ] Documentação OpenAPI (tag `Sessoes`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 ---
 
@@ -540,6 +544,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] `DELETE /activities/:id` — remove
 - [ ] `POST /activities/:id/photo` — upload foto
 - [ ] Documentação OpenAPI (tag `Atividades`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 ---
 
@@ -568,6 +573,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Limite configurável de thumbnails por dia
 - [ ] Agregação considera timezone do usuário
 - [ ] Documentação OpenAPI (tag `Calendario`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 ---
 
@@ -578,6 +584,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Limite retroativo opcional via env (ex.: 90 dias)
 - [ ] Testes: data futura rejeitada
 - [ ] Testes: meia-noite e timezone
+- [ ] Documentação OpenAPI: validações refletidas nos schemas das rotas afetadas
 
 #### SDD
 
@@ -606,6 +613,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Índice: `(user_id, exercise_id, performed_at)`
 - [ ] Filtros: 30, 60, 90 dias e intervalo customizado
 - [ ] Documentação OpenAPI (tag `Progressao`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 ---
 
@@ -632,6 +640,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Guard `requireRole('admin')` em rotas admin
 - [ ] Guard `requireRole('super_user')` em rotas exclusivas
 - [ ] Migration: tabela `admin_audit_logs`
+- [ ] Documentação OpenAPI (tag `Admin`, namespace `/admin`)
+- [ ] Testes automatizados: guards de role bloqueiam acesso indevido
 
 #### SDD
 
@@ -650,6 +660,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] `GET /admin/muscle-groups` — listagem
 - [ ] `POST /admin/muscle-groups` — cria categoria
 - [ ] `PATCH /admin/muscle-groups/:id` — edita categoria
+- [ ] Documentação OpenAPI (tag `Admin`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -671,6 +683,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [ ] Admin não altera outro admin/super_user (apenas super_user)
 - [ ] Alterações de status/role registradas em audit log
+- [ ] Documentação OpenAPI (tag `Admin`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -683,6 +697,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] `GET /admin/admins` — lista admins e super_users
 - [ ] `PATCH /admin/admins/:id/role` — promove/rebaixa
 - [ ] `GET /admin/audit-logs` — log paginado (`?actor_id=&action=&from=&to=`)
+- [ ] Documentação OpenAPI (tag `Admin`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -710,6 +726,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [ ] Schema de `criteria`: `streak_days`, `workout_count`, `challenge_complete`
 - [ ] Documentação OpenAPI (tag `Admin`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -744,6 +761,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] `GET /achievements` — vitrine (desbloqueadas + bloqueadas)
 - [ ] `GET /achievements/mine` — somente desbloqueadas
 - [ ] Documentação OpenAPI (tag `Conquistas`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -768,6 +786,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Atualização de progresso em eventos de treino/atividade
 - [ ] Ranking com desempate determinístico (`updated_at`)
 - [ ] Documentação OpenAPI (tag `Desafios`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -784,6 +803,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Campos de streak no payload de `GET /calendar`
 - [ ] Conquistas automáticas nos marcos 7, 30, 60, 90 dias
 - [ ] Cache opcional: tabela `user_streaks`
+- [ ] Documentação OpenAPI: campos de streak refletidos no schema de `GET /calendar`
+- [ ] Testes automatizados: `computeStreak` cobre virada de dia/timezone e marcos de conquista
 
 #### SDD
 
@@ -804,6 +825,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] `GET /notifications` — inbox paginada
 - [ ] `PATCH /notifications/:id/read` — marca como lida
 - [ ] Documentação OpenAPI (tag `Notificacoes`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -831,6 +853,11 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 #### Opcional
 
 - [ ] Campo `default_rest_seconds` em `sheet_exercises` (suporte a cronômetro no client)
+
+#### Qualidade
+
+- [ ] Documentação OpenAPI (tag `Planilhas`/`Exercicios`, conforme rota)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -860,6 +887,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] Cron: lembretes de treino nos dias da planilha
 - [ ] Event-driven: push ao desbloquear conquista
 - [ ] Event-driven: push ao publicar desafio (`POST /admin/challenges`)
+- [ ] Documentação OpenAPI (tag `Notificacoes`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -893,6 +922,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [ ] Resolução de conflitos (last-write-wins ou merge por `recorded_at`)
 - [ ] Persistência de snapshots sincronizados
+- [ ] Documentação OpenAPI (tag a definir para `/integrations`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -916,6 +947,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [ ] CSV com streaming para históricos grandes
 - [ ] Rate limit em rotas de exportação
 - [ ] Documentação OpenAPI (tag `Exportacao`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -937,6 +969,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [ ] Idempotência via `client_generated_id`
 - [ ] Política de conflito documentada e implementada
+- [ ] Documentação OpenAPI (tag a definir para `/sync`)
+- [ ] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
@@ -956,8 +990,8 @@ Marque na sequência abaixo para minimizar retrabalho:
 
 1. [x] **Fase 0** — ORM, migrations, auth plugin, media service
 2. [x] **1.1** — Auth (OAuth + email/senha + vinculação de contas)
-3. [ ] **1.3** — Exercises (seed) + custom exercises
-4. [ ] **1.4** — Workout sheets
+3. [x] **1.3** — Exercises (seed) + custom exercises
+4. [x] **1.4** — Workout sheets
 5. [ ] **1.5** — Workout sessions + upload foto
 6. [x] **1.2** — Body measurements history
 7. [ ] **2.1** — Free activities + activity types

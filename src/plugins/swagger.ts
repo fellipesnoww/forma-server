@@ -30,6 +30,8 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
         { name: 'Auth', description: 'Registro, login, OAuth e sessao' },
         { name: 'Media', description: 'Upload e download de arquivos' },
         { name: 'Perfil', description: 'Dados de perfil e medidas corporais' },
+        { name: 'Exercicios', description: 'Catalogo de exercicios e exercicios personalizados' },
+        { name: 'Planilhas', description: 'Planilhas de treino' },
       ],
       components: {
         securitySchemes: {

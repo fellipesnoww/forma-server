@@ -11,6 +11,8 @@ assumidas — sempre no passado, sempre no mesmo commit da implementação.
 | Fase 0 — Fundação técnica | [fase-0-fundacao-tecnica.md](fase-0-fundacao-tecnica.md) | 2026-09-06 |
 | 1.1 — Autenticação        | [1.1-autenticacao.md](1.1-autenticacao.md)               | 2026-09-26 |
 | 1.2 — Perfil do usuário   | [1.2-perfil.md](1.2-perfil.md)                           | 2026-09-26 |
+| 1.3 — Exercícios          | [1.3-exercicios.md](1.3-exercicios.md)                   | 2026-09-26 |
+| 1.4 — Planilha de treino  | [1.4-planilhas.md](1.4-planilhas.md)                     | 2026-09-26 |
 
 ## Como criar um novo documento
 
