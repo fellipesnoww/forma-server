@@ -12,8 +12,8 @@
 
 | Fase | Status |
 |---|---|
-| 0 — Fundação técnica | 🟨 parcial (Dockerfile, staging e testes pendentes) |
-| 1 — MVP Core | 🟨 parcial (1.1–1.4 concluídas; 1.0, 1.5–1.6 pendentes) |
+| 0 — Fundação técnica | 🟨 parcial (Dockerfile e staging pendentes; testes: suíte `node:test` desde a 1.6) |
+| 1 — MVP Core | 🟨 parcial (1.1–1.6 concluídas; 1.0 pendente) |
 | 2 — Completude do usuário | ⬜ |
 | 3 — Painel administrativo | ⬜ |
 | 4 — Gamificação | ⬜ |
@@ -269,7 +269,9 @@ src/features/...
 >
 > **Testes automatizados (Vitest)** também ficaram fora do escopo por decisão do time; a
 > verificação da Fase 0 foi manual e está documentada em
-> [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.md).
+> [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.md). A partir da 1.6 o
+> repositório tem `yarn test` com o runner nativo `node:test` (sem Vitest) — ver
+> [`sdd/1.6-entrega-fase-1.md`](sdd/1.6-entrega-fase-1.md).
 
 ---
 
@@ -348,8 +350,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Testes
 
-> Sem Vitest configurado no repositório (débito da Fase 0). Os cenários abaixo foram
-> verificados manualmente via curl durante a implementação — ver `sdd/1.1-autenticacao.md`.
+> Verificados manualmente via curl na 1.1 — ver `sdd/1.1-autenticacao.md`. Desde a 1.6,
+> register → login, refresh e logout também rodam no smoke test automatizado (`test/smoke.test.ts`).
 
 - [x] Register → login email/senha → JWT válido
 - [x] Register com email duplicado → 409
@@ -391,7 +393,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [x] Validação: peso/altura/cintura/peitoral > 0 (kg, cm)
 - [ ] Avatar: resize máx. 512×512, limite ~2 MB — fora de escopo deste PR (ver nota acima)
 - [x] Documentação OpenAPI (tag `Perfil`)
-- [ ] Testes automatizados — Vitest não configurado (débito da Fase 0); verificado manualmente via curl, ver `sdd/1.2-perfil.md`
+- [ ] Testes automatizados — **parcial:** ownership e fluxo principal cobertos pela suíte da 1.6 (`test/`); validações específicas da feature seguem só manuais via curl, ver `sdd/1.2-perfil.md`
 
 ---
 
@@ -428,7 +430,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [x] Custom exercises isolados por `user_id`
 - [x] Catálogo padrão somente leitura para `user`
 - [x] Documentação OpenAPI (tag `Exercicios`)
-- [ ] Testes automatizados — Vitest não configurado (débito da Fase 0); verificado manualmente via curl, ver `sdd/1.3-exercicios.md`
+- [ ] Testes automatizados — **parcial:** ownership e fluxo principal cobertos pela suíte da 1.6 (`test/`); validações específicas da feature seguem só manuais via curl, ver `sdd/1.3-exercicios.md`
 
 ---
 
@@ -463,53 +465,60 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 - [x] Validar referência a exercício (catálogo ativo ou custom do mesmo usuário) — validado na service, sem CHECK constraint (ver `sdd/1.4-planilhas.md`)
 - [x] `weekday` único por planilha (`@@unique([sheetId, weekday])` + validação no Zod)
 - [x] Documentação OpenAPI (tag `Planilhas`)
-- [ ] Testes automatizados — Vitest não configurado (débito da Fase 0); verificado manualmente via curl, ver `sdd/1.4-planilhas.md`
+- [ ] Testes automatizados — **parcial:** ownership e fluxo principal cobertos pela suíte da 1.6 (`test/`); validações específicas da feature seguem só manuais via curl, ver `sdd/1.4-planilhas.md`
 
 ---
 
 ### 1.5 Execução de treino
 
+> Foto pós-treino reaproveita `dbMediaStorage` como está — sem compressão/resize (mesmo descope
+> do avatar na 1.2 e da Fase 0). Ver [`sdd/1.5-sessoes-treino.md`](sdd/1.5-sessoes-treino.md) › Pendências.
+
 #### Feature package
 
-- [ ] Criar `features/workout-sessions/` (`index.ts`, routes, service, repository, schemas)
+- [x] Criar `features/workout-sessions/` (`index.ts`, routes, service, repository, schemas)
 
 #### SDD
 
-- [ ] `sdd/1.5-sessoes-treino.md` — documentar implementação
+- [x] `sdd/1.5-sessoes-treino.md` — documentar implementação
 
 #### Modelagem
 
-- [ ] Migration: tabela `workout_sessions` (`sheet_id`, `performed_at`, `photo_url`, `comment`)
-- [ ] Migration: tabela `session_exercises`
-- [ ] Migration: tabela `session_sets` (`set_number`, `reps`, `weight_kg`, `completed`)
-- [ ] Índice: `(user_id, performed_at)`
+- [x] Migration: tabela `workout_sessions` (`sheet_id`, `performed_at`, `photo_url`, `comment`) — + `completed_at`
+- [x] Migration: tabela `session_exercises`
+- [x] Migration: tabela `session_sets` (`set_number`, `reps`, `weight_kg`, `completed`)
+- [x] Índice: `(user_id, performed_at)`
 
 #### Endpoints
 
-- [ ] `POST /workout-sessions` — registra sessão completa
-- [ ] `GET /workout-sessions/:id` — detalhe da sessão
-- [ ] `PATCH /workout-sessions/:id` — atualiza sets, foto, comentário
-- [ ] `POST /workout-sessions/:id/complete` — finaliza sessão
-- [ ] `POST /workout-sessions/:id/photo` — upload foto pós-treino
-- [ ] `GET /workout-sessions` — histórico (`?from=&to=&sheet_id=`)
+- [x] `POST /workout-sessions` — registra sessão completa
+- [x] `GET /workout-sessions/:id` — detalhe da sessão
+- [x] `PATCH /workout-sessions/:id` — atualiza sets, foto, comentário
+- [x] `POST /workout-sessions/:id/complete` — finaliza sessão
+- [x] `POST /workout-sessions/:id/photo` — upload foto pós-treino — **parcial:** sem compressão (ver nota acima)
+- [x] `GET /workout-sessions` — histórico (`?from=&to=&sheetId=&page=&limit=`)
 
 #### Regras de negócio
 
-- [ ] `performed_at` default `now()`; aceita valor passado
-- [ ] Validar sets: `reps` ≥ 0, `weight_kg` ≥ 0
-- [ ] Compressão de foto e associação à sessão
-- [ ] Idempotência em `complete`
-- [ ] Documentação OpenAPI (tag `Sessoes`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] `performed_at` default `now()`; aceita valor passado — futuro (> 5 min de tolerância) rejeitado com 400
+- [x] Validar sets: `reps` ≥ 0, `weight_kg` ≥ 0
+- [ ] Compressão de foto e associação à sessão — associação feita; compressão fora de escopo deste PR (ver nota acima)
+- [x] Idempotência em `complete`
+- [x] Documentação OpenAPI (tag `Sessoes`)
+- [x] Testes automatizados — `test/workout-sessions.test.ts` (regras da feature) + ownership e fluxo principal na suíte da 1.6
 
 ---
 
 ### 1.6 Entrega Fase 1
 
-- [ ] Testes de autorização (roles + ownership)
-- [ ] Swagger documentando todas as rotas da fase
-- [ ] Smoke test end-to-end: login → planilha → sessão → histórico
-- [ ] Atualizar `sdd/README.md` com links das etapas 1.1–1.5
+> Testes com o runner nativo `node:test` (via `tsx --test`), sem adicionar Vitest — ver
+> [`sdd/1.6-entrega-fase-1.md`](sdd/1.6-entrega-fase-1.md). Os testes cobrem as regras
+> transversais da fase; os "Testes automatizados" por feature (1.2–1.4) seguem abertos (1.5 coberta).
+
+- [x] Testes de autorização (roles + ownership) — `test/authorization.test.ts`, `test/require-role.test.ts`
+- [x] Swagger documentando todas as rotas da fase — verificado por `test/swagger.test.ts`
+- [x] Smoke test end-to-end: login → planilha → sessão → histórico — `test/smoke.test.ts`
+- [x] Atualizar `sdd/README.md` com links das etapas 1.1–1.5
 
 ---
 
@@ -579,8 +588,8 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 ### 2.3 Registro retroativo
 
-- [ ] Validação: `performed_at <= now()` (+ tolerância clock skew)
-- [ ] Validação aplicada em sessões e atividades (POST/PATCH)
+- [x] Validação: `performed_at <= now()` (+ tolerância clock skew) — antecipada na 1.5 para sessões (5 min de tolerância, `workout-sessions.schemas.ts`)
+- [ ] Validação aplicada em sessões e atividades (POST/PATCH) — **parcial:** sessões (POST/PATCH) feito na 1.5; atividades dependem da 2.1
 - [ ] Limite retroativo opcional via env (ex.: 90 dias)
 - [ ] Testes: data futura rejeitada
 - [ ] Testes: meia-noite e timezone
@@ -992,7 +1001,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 2. [x] **1.1** — Auth (OAuth + email/senha + vinculação de contas)
 3. [x] **1.3** — Exercises (seed) + custom exercises
 4. [x] **1.4** — Workout sheets
-5. [ ] **1.5** — Workout sessions + upload foto
+5. [x] **1.5** — Workout sessions + upload foto
 6. [x] **1.2** — Body measurements history
 7. [ ] **2.1** — Free activities + activity types
 8. [ ] **2.2–2.3** — Calendar + validação retroativa

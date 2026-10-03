@@ -73,10 +73,11 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  profile           UserProfile?
-  bodyMeasurements  BodyMeasurement[]
-  customExercises   CustomExercise[]
-  workoutSheets     WorkoutSheet[]
+  profile          UserProfile?
+  bodyMeasurements BodyMeasurement[]
+  customExercises  CustomExercise[]
+  workoutSheets    WorkoutSheet[]
+  workoutSessions  WorkoutSession[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
@@ -142,8 +143,9 @@ model Exercise {
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  muscleGroup     MuscleGroup?     @relation(fields: [muscleGroupId], references: [id])
-  sheetExercises  SheetExercise[]
+  muscleGroup      MuscleGroup?      @relation(fields: [muscleGroupId], references: [id])
+  sheetExercises   SheetExercise[]
+  sessionExercises SessionExercise[]
 
   @@unique([name])
   @@index([muscleGroupId])
@@ -161,9 +163,10 @@ model CustomExercise {
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  muscleGroup    MuscleGroup?     @relation(fields: [muscleGroupId], references: [id])
-  sheetExercises SheetExercise[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  muscleGroup      MuscleGroup?      @relation(fields: [muscleGroupId], references: [id])
+  sheetExercises   SheetExercise[]
+  sessionExercises SessionExercise[]
 
   @@index([userId, deletedAt])
   @@map("custom_exercises")
@@ -179,8 +182,9 @@ model WorkoutSheet {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  user User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  days SheetDay[]
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days     SheetDay[]
+  sessions WorkoutSession[]
 
   @@index([userId, deletedAt])
   @@map("workout_sheets")
@@ -220,4 +224,63 @@ model SheetExercise {
 
   @@index([dayId, sortOrder])
   @@map("sheet_exercises")
+}
+
+/// Sessao de treino executada a partir de uma planilha (Fase 1.5). `performedAt` aceita valor
+/// passado (registro retroativo) e e o eixo do historico; `completedAt` marca a finalizacao e
+/// e o que torna `POST /complete` idempotente. A planilha pode ter sido removida (soft delete)
+/// depois — a sessao continua valida e apontando para ela.
+model WorkoutSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  sheetId     String    @map("sheet_id") @db.Uuid
+  performedAt DateTime  @default(now()) @map("performed_at") @db.Timestamptz(3)
+  photoUrl    String?   @map("photo_url")
+  comment     String?   @db.VarChar(1000)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheet     WorkoutSheet      @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  exercises SessionExercise[]
+
+  @@index([userId, performedAt])
+  @@index([sheetId])
+  @@map("workout_sessions")
+}
+
+/// Exercicio executado numa sessao. Mesma regra de referencia de `SheetExercise`: exatamente
+/// um de `exerciseId`/`customExerciseId`, validado na camada de servico. Nao aponta para o
+/// `SheetExercise` de origem porque o usuario pode trocar/adicionar exercicios na execucao e
+/// a planilha pode ser editada depois sem reescrever o historico.
+model SessionExercise {
+  id               String  @id @default(uuid()) @db.Uuid
+  sessionId        String  @map("session_id") @db.Uuid
+  exerciseId       String? @map("exercise_id") @db.Uuid
+  customExerciseId String? @map("custom_exercise_id") @db.Uuid
+  sortOrder        Int     @map("sort_order")
+
+  session        WorkoutSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  exercise       Exercise?       @relation(fields: [exerciseId], references: [id])
+  customExercise CustomExercise? @relation(fields: [customExerciseId], references: [id])
+  sets           SessionSet[]
+
+  @@index([sessionId, sortOrder])
+  @@map("session_exercises")
+}
+
+/// Serie registrada de um exercicio da sessao. `reps`/`weightKg` >= 0 (0 kg = peso corporal).
+model SessionSet {
+  id                String  @id @default(uuid()) @db.Uuid
+  sessionExerciseId String  @map("session_exercise_id") @db.Uuid
+  setNumber         Int     @map("set_number")
+  reps              Int
+  weightKg          Float   @map("weight_kg")
+  completed         Boolean @default(false)
+
+  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionExerciseId, setNumber])
+  @@map("session_sets")
 }

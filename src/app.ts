@@ -9,6 +9,7 @@ import { registerExercisesRoutes } from './features/exercises/index.js';
 import { registerHealthRoutes } from './features/health/index.js';
 import { registerMediaRoutes } from './features/media/index.js';
 import { registerProfileRoutes } from './features/profile/index.js';
+import { registerWorkoutSessionsRoutes } from './features/workout-sessions/index.js';
 import { registerWorkoutSheetsRoutes } from './features/workout-sheets/index.js';
 import authPlugin from './plugins/auth.js';
 import errorHandlerPlugin from './plugins/error-handler.js';
@@ -67,6 +68,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerProfileRoutes(app);
   await registerExercisesRoutes(app);
   await registerWorkoutSheetsRoutes(app);
+  await registerWorkoutSessionsRoutes(app);
 
   return app;
 }

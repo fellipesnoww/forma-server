@@ -4,6 +4,7 @@ import {
   countSheetExercisesInDay,
   createSheet,
   findDayWithSheet,
+  findSheetById,
   findSheetDetail,
   listSheets,
   reorderSheetExercises,
@@ -102,6 +103,14 @@ async function validateExerciseReferences(userId: string, days: SheetDayInput[])
 
 export async function getSheets(userId: string): Promise<SheetSummaryDto[]> {
   return (await listSheets(userId)).map(toSummaryDto);
+}
+
+/**
+ * Usado por `workout-sessions` (via `index.ts`) para validar o `sheetId` de uma nova sessao:
+ * planilha removida ou de outro usuario conta como inexistente.
+ */
+export async function activeSheetBelongsToUser(userId: string, sheetId: string): Promise<boolean> {
+  return (await findSheetById(userId, sheetId)) !== null;
 }
 
 async function requireSheetDetail(userId: string, id: string): Promise<SheetDetailRow> {
