@@ -109,26 +109,27 @@ Novas áreas da API devem registrar sua tag na lista `tags` do mesmo arquivo (ex
 
 ## Scripts
 
-| Script              | Descrição                                                 |
-| ------------------- | --------------------------------------------------------- |
-| `yarn dev`          | Servidor em modo watch (tsx)                              |
-| `yarn build`        | Limpa `dist/`, gera o client Prisma e compila TypeScript  |
-| `yarn start`        | Executa a build de `dist/`                                |
-| `yarn typecheck`    | `tsc --noEmit` (código e `test/`)                         |
-| `yarn test`         | Testes de integração (`node:test`); exige Postgres + seed |
-| `yarn lint`         | ESLint (regras Airbnb)                                    |
-| `yarn lint:fix`     | ESLint com correção automática                            |
-| `yarn format`       | Formata o projeto com Prettier                            |
-| `yarn format:check` | Verifica formatação sem alterar arquivos                  |
-| `yarn db:up`        | Sobe o container do PostgreSQL                            |
-| `yarn db:down`      | Derruba o container (o volume de dados persiste)          |
-| `yarn db:generate`  | Gera o Prisma Client em `src/generated/prisma`            |
-| `yarn db:migrate`   | Cria e aplica migration em desenvolvimento                |
-| `yarn db:deploy`    | Aplica migrations pendentes (produção)                    |
-| `yarn db:seed`      | Executa os seeds de `src/db/seed/`                        |
-| `yarn db:studio`    | Abre o Prisma Studio                                      |
-| `yarn db:reset`     | **Apaga o banco**, reaplica migrations e roda os seeds    |
-| `yarn token:dev`    | Emite um JWT para testar rotas autenticadas (só em dev)   |
+| Script              | Descrição                                                   |
+| ------------------- | ----------------------------------------------------------- |
+| `yarn dev`          | Servidor em modo watch (tsx)                                |
+| `yarn build`        | Limpa `dist/`, gera o client Prisma e compila TypeScript    |
+| `yarn start`        | Executa a build de `dist/`                                  |
+| `yarn typecheck`    | `tsc --noEmit` (código e `test/`)                           |
+| `yarn test`         | Testes de integração (`node:test`); exige Postgres + seed   |
+| `yarn lint`         | ESLint (regras Airbnb)                                      |
+| `yarn lint:fix`     | ESLint com correção automática                              |
+| `yarn format`       | Formata o projeto com Prettier                              |
+| `yarn format:check` | Verifica formatação sem alterar arquivos                    |
+| `yarn db:up`        | Sobe o container do PostgreSQL                              |
+| `yarn db:down`      | Derruba o container (o volume de dados persiste)            |
+| `yarn db:generate`  | Gera o Prisma Client em `src/generated/prisma`              |
+| `yarn db:migrate`   | Cria e aplica migration em desenvolvimento                  |
+| `yarn db:deploy`    | Aplica migrations pendentes (produção)                      |
+| `yarn db:seed`      | Executa os seeds de `src/db/seed/`                          |
+| `yarn db:studio`    | Abre o Prisma Studio                                        |
+| `yarn db:reset`     | **Apaga o banco**, reaplica migrations e roda os seeds      |
+| `yarn token:dev`    | Emite um JWT para testar rotas autenticadas (só em dev)     |
+| `yarn seed:demo`    | Recria 3 usuários de demo com histórico (senha `forma1234`) |
 
 ## Estrutura
 
