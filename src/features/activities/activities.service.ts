@@ -5,6 +5,7 @@ import {
   activityTypeVisibleToUser,
   createActivity,
   createActivityType,
+  defaultActivityTypeExists,
   deleteActivity,
   findActivity,
   findVisibleActivityTypeByName,
@@ -180,4 +181,9 @@ export async function getActivitiesBetween(
   end: Date,
 ): Promise<ActivityDto[]> {
   return (await listActivitiesBetween(userId, start, end)).map(toActivityDto);
+}
+
+/** Usado pelo painel admin (Fase 3.5) para validar `goal.activityTypeId` de desafios. */
+export function isDefaultActivityType(id: string): Promise<boolean> {
+  return defaultActivityTypeExists(id);
 }

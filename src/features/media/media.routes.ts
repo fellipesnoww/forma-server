@@ -61,7 +61,9 @@ export const mediaRoutes: FastifyPluginAsyncZod = async (app) => {
         summary: 'Baixa o binario de um arquivo',
         description:
           'Responde com o binario cru e o Content-Type detectado no upload. ' +
-          'Acessivel ao dono do arquivo ou a um admin.',
+          'Acessivel ao dono do arquivo ou a um admin. Midia global (sem dono — imagens do ' +
+          'catalogo de exercicios e icones de conquistas, enviadas pelo painel admin) e ' +
+          'acessivel a qualquer usuario autenticado.',
         security: [{ bearerAuth: [] }],
         params: mediaIdParamsSchema,
         // Sem schema de 200 de proposito: com um schema Zod o serializer converteria o
@@ -76,7 +78,14 @@ export const mediaRoutes: FastifyPluginAsyncZod = async (app) => {
       const owner = await findMediaOwner(request.params.id);
 
       // 404 e nao 403 quando o asset e de outro usuario: 403 confirmaria que o id existe.
-      if (!owner || (owner.ownerId !== request.user.sub && !hasRole(request.user.role, 'admin'))) {
+      // `ownerId` null = midia global do catalogo (Fase 3.2/3.5), visivel a todos.
+      const readable =
+        owner !== null &&
+        (owner.ownerId === null ||
+          owner.ownerId === request.user.sub ||
+          hasRole(request.user.role, 'admin'));
+
+      if (!readable) {
         throw AppError.notFound('Arquivo nao encontrado');
       }
 

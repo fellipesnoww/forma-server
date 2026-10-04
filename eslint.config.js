@@ -34,6 +34,8 @@ export default [
       'import-x/prefer-default-export': 'off',
       // Fastify expoe o logger via app.log; console fica restrito ao bootstrap
       'no-console': 'error',
+      // Campos de agregacao do Prisma (`_count`, `_max`...) sao API do client, nao convencao nossa
+      'no-underscore-dangle': ['error', { allow: ['_count', '_max', '_min', '_sum', '_avg'] }],
     },
   },
 

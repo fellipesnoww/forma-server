@@ -38,6 +38,16 @@ export async function activityTypeVisibleToUser(userId: string, id: string): Pro
   return type !== null;
 }
 
+/** Tipo padrao (seed, `user_id` null) — os unicos que um desafio global pode referenciar. */
+export async function defaultActivityTypeExists(id: string): Promise<boolean> {
+  const type = await prisma.activityType.findFirst({
+    where: { id, userId: null },
+    select: { id: true },
+  });
+
+  return type !== null;
+}
+
 export function createActivityType(userId: string, name: string): Promise<ActivityType> {
   return prisma.activityType.create({ data: { userId, name } });
 }

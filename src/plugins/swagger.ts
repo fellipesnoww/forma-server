@@ -36,6 +36,12 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
         { name: 'Atividades', description: 'Atividades livres e tipos de atividade' },
         { name: 'Calendario', description: 'Treinos e atividades agrupados por dia local' },
         { name: 'Progressao', description: 'Evolucao de carga e de medidas corporais' },
+        {
+          name: 'Admin',
+          description:
+            'Painel administrativo (/admin/*): exige admin; rotas marcadas exigem super_user. ' +
+            'Toda mutacao gera audit log.',
+        },
       ],
       components: {
         securitySchemes: {

@@ -80,6 +80,9 @@ model User {
   workoutSessions  WorkoutSession[]
   activityTypes    ActivityType[]
   freeActivities   FreeActivity[]
+  auditLogs        AdminAuditLog[]
+  achievements     UserAchievement[]
+  challenges       UserChallenge[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
@@ -333,4 +336,100 @@ model FreeActivity {
   @@index([userId, performedAt])
   @@index([activityTypeId])
   @@map("free_activities")
+}
+
+/// Trilha de auditoria do painel admin (Fase 3.1). Toda mutacao feita em `/admin/*` grava uma
+/// linha aqui na mesma transacao da alteracao — nao existe acao admin sem registro.
+/// `actor_id` em SET NULL (e nao cascade): apagar a conta do admin nao pode apagar o historico
+/// do que ele fez. Null tambem identifica acoes feitas fora da API (`yarn user:set-role`).
+/// `target_id` sem FK porque aponta para tabelas diferentes conforme `target_type`.
+model AdminAuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String   @db.VarChar(64)
+  targetType String   @map("target_type") @db.VarChar(40)
+  targetId   String?  @map("target_id") @db.Uuid
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_audit_logs")
+}
+
+/// Conquista cadastrada pelo admin (Fase 3.5). `criteria` e um JSON discriminado por `type`
+/// (`streak_days` | `workout_count` | `challenge_complete`), validado por Zod na API — o motor
+/// que avalia os criterios chega na Fase 4.1.
+model Achievement {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(120)
+  description String?  @db.VarChar(500)
+  iconUrl     String?  @map("icon_url")
+  criteria    Json
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  unlocks UserAchievement[]
+
+  @@map("achievements")
+}
+
+/// Desafio com periodo definido (Fase 3.5). `goal` e um JSON discriminado por `type`
+/// (`workout_count` | `activity_count` | `activity_minutes`). Participacao e progresso ficam em
+/// `UserChallenge` (rotas de usuario na Fase 4.2).
+model Challenge {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(120)
+  description String?  @db.VarChar(1000)
+  goal        Json
+  reward      String?  @db.VarChar(255)
+  startsAt    DateTime @map("starts_at") @db.Timestamptz(3)
+  endsAt      DateTime @map("ends_at") @db.Timestamptz(3)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  participants UserChallenge[]
+
+  @@index([isActive, startsAt, endsAt])
+  @@map("challenges")
+}
+
+/// Desbloqueio de conquista (estrutura base na 3.5; o insert idempotente vem na Fase 4.1).
+model UserAchievement {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  achievementId String   @map("achievement_id") @db.Uuid
+  unlockedAt    DateTime @default(now()) @map("unlocked_at") @db.Timestamptz(3)
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([achievementId, unlockedAt])
+  @@map("user_achievements")
+}
+
+/// Participacao em desafio (estrutura base na 3.5). `progress` na unidade do `goal` (treinos,
+/// atividades ou minutos); `updatedAt` desempata o ranking da Fase 4.2.
+model UserChallenge {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  challengeId String    @map("challenge_id") @db.Uuid
+  progress    Int       @default(0)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+  joinedAt    DateTime  @default(now()) @map("joined_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@index([challengeId, progress, updatedAt])
+  @@map("user_challenges")
 }

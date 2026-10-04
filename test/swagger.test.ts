@@ -15,7 +15,7 @@ interface OpenApiDoc {
   paths: Record<string, Record<string, Operation>>;
 }
 
-/** Todas as rotas entregues na Fase 0, na Fase 1 (1.1–1.5) e na Fase 2 (2.1–2.4). Rota nova entra aqui. */
+/** Todas as rotas entregues nas Fases 0, 1 (1.1–1.5), 2 (2.1–2.4) e 3 (3.1–3.5). Rota nova entra aqui. */
 const PHASE_ROUTES = [
   'GET /health',
   'GET /health/db',
@@ -61,6 +61,31 @@ const PHASE_ROUTES = [
   'GET /calendar/{date}',
   'GET /progress/load',
   'GET /progress/measurements',
+  'GET /admin/exercises',
+  'POST /admin/exercises',
+  'PATCH /admin/exercises/{id}',
+  'PATCH /admin/exercises/{id}/status',
+  'GET /admin/muscle-groups',
+  'POST /admin/muscle-groups',
+  'PATCH /admin/muscle-groups/{id}',
+  'GET /admin/users',
+  'GET /admin/users/{id}',
+  'PATCH /admin/users/{id}/status',
+  'PATCH /admin/users/{id}/role',
+  'GET /admin/admins',
+  'PATCH /admin/admins/{id}/role',
+  'GET /admin/audit-logs',
+  'GET /admin/achievements',
+  'POST /admin/achievements',
+  'GET /admin/achievements/{id}',
+  'PATCH /admin/achievements/{id}',
+  'DELETE /admin/achievements/{id}',
+  'GET /admin/achievements/{id}/unlocks',
+  'GET /admin/challenges',
+  'POST /admin/challenges',
+  'GET /admin/challenges/{id}',
+  'PATCH /admin/challenges/{id}',
+  'DELETE /admin/challenges/{id}',
 ];
 
 /** Unicas rotas sem bearer: health, e as que emitem/renovam tokens. */

@@ -31,6 +31,7 @@
     "db:reset": "prisma migrate reset",
     "token:dev": "tsx src/dev/mint-token.ts",
     "seed:demo": "tsx src/dev/seed-demo.ts",
+    "user:set-role": "tsx src/scripts/set-role.ts",
     "prepare": "husky"
   },
   "dependencies": {

@@ -3,7 +3,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { env } from '../config/env.js';
-import { findUserStatus, hasRole, isRole, type Role } from '../shared/auth/index.js';
+import { findUserAccess, hasRole, isRole, type Role } from '../shared/auth/index.js';
 import { AppError } from '../shared/errors/index.js';
 
 /**
@@ -37,15 +37,19 @@ async function authPlugin(app: FastifyInstance): Promise<void> {
 
     // Consulta a conta a cada requisicao: e o unico jeito de reagir a um ban/desativacao
     // acontecidos depois que o access token foi emitido (o token em si so expira em 15 min).
-    const status = await findUserStatus(request.user.sub);
+    const access = await findUserAccess(request.user.sub);
 
-    if (!status) {
+    if (!access) {
       throw AppError.unauthorized();
     }
 
-    if (status !== 'active') {
+    if (access.status !== 'active') {
       throw AppError.forbidden('Conta banida ou inativa');
     }
+
+    // O papel do banco prevalece sobre a claim: um admin rebaixado em /admin/admins/:id/role
+    // perde o acesso no proximo request, sem esperar o token expirar (Fase 3.1).
+    request.user.role = access.role;
   });
 
   app.decorate(

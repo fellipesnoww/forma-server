@@ -1,7 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 
 import { env } from '../../config/env.js';
-import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaClient, type Prisma as PrismaTypes } from '../../generated/prisma/client.js';
 
 /**
  * Cliente Prisma unico do processo.
@@ -18,3 +18,10 @@ const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 export const prisma = new PrismaClient({ adapter });
 
 export type Prisma = typeof prisma;
+
+/**
+ * Cliente recebido dentro de `prisma.$transaction(async (tx) => ...)`. Repositories que
+ * participam de uma transacao aberta por outra camada (ex.: mutacao admin + audit log na
+ * Fase 3) recebem este tipo em vez de usar o singleton.
+ */
+export type TransactionClient = PrismaTypes.TransactionClient;

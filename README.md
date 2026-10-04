@@ -109,27 +109,28 @@ Novas áreas da API devem registrar sua tag na lista `tags` do mesmo arquivo (ex
 
 ## Scripts
 
-| Script              | Descrição                                                   |
-| ------------------- | ----------------------------------------------------------- |
-| `yarn dev`          | Servidor em modo watch (tsx)                                |
-| `yarn build`        | Limpa `dist/`, gera o client Prisma e compila TypeScript    |
-| `yarn start`        | Executa a build de `dist/`                                  |
-| `yarn typecheck`    | `tsc --noEmit` (código e `test/`)                           |
-| `yarn test`         | Testes de integração (`node:test`); exige Postgres + seed   |
-| `yarn lint`         | ESLint (regras Airbnb)                                      |
-| `yarn lint:fix`     | ESLint com correção automática                              |
-| `yarn format`       | Formata o projeto com Prettier                              |
-| `yarn format:check` | Verifica formatação sem alterar arquivos                    |
-| `yarn db:up`        | Sobe o container do PostgreSQL                              |
-| `yarn db:down`      | Derruba o container (o volume de dados persiste)            |
-| `yarn db:generate`  | Gera o Prisma Client em `src/generated/prisma`              |
-| `yarn db:migrate`   | Cria e aplica migration em desenvolvimento                  |
-| `yarn db:deploy`    | Aplica migrations pendentes (produção)                      |
-| `yarn db:seed`      | Executa os seeds de `src/db/seed/`                          |
-| `yarn db:studio`    | Abre o Prisma Studio                                        |
-| `yarn db:reset`     | **Apaga o banco**, reaplica migrations e roda os seeds      |
-| `yarn token:dev`    | Emite um JWT para testar rotas autenticadas (só em dev)     |
-| `yarn seed:demo`    | Recria 3 usuários de demo com histórico (senha `forma1234`) |
+| Script               | Descrição                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `yarn dev`           | Servidor em modo watch (tsx)                                                          |
+| `yarn build`         | Limpa `dist/`, gera o client Prisma e compila TypeScript                              |
+| `yarn start`         | Executa a build de `dist/`                                                            |
+| `yarn typecheck`     | `tsc --noEmit` (código e `test/`)                                                     |
+| `yarn test`          | Testes de integração (`node:test`); exige Postgres + seed                             |
+| `yarn lint`          | ESLint (regras Airbnb)                                                                |
+| `yarn lint:fix`      | ESLint com correção automática                                                        |
+| `yarn format`        | Formata o projeto com Prettier                                                        |
+| `yarn format:check`  | Verifica formatação sem alterar arquivos                                              |
+| `yarn db:up`         | Sobe o container do PostgreSQL                                                        |
+| `yarn db:down`       | Derruba o container (o volume de dados persiste)                                      |
+| `yarn db:generate`   | Gera o Prisma Client em `src/generated/prisma`                                        |
+| `yarn db:migrate`    | Cria e aplica migration em desenvolvimento                                            |
+| `yarn db:deploy`     | Aplica migrations pendentes (produção)                                                |
+| `yarn db:seed`       | Executa os seeds de `src/db/seed/`                                                    |
+| `yarn db:studio`     | Abre o Prisma Studio                                                                  |
+| `yarn db:reset`      | **Apaga o banco**, reaplica migrations e roda os seeds                                |
+| `yarn token:dev`     | Emite um JWT para testar rotas autenticadas (só em dev)                               |
+| `yarn seed:demo`     | Recria 3 usuários de demo com histórico (senha `forma1234`)                           |
+| `yarn user:set-role` | Define o papel de uma conta (`--email= --role=`), com audit log; cria o 1º super_user |
 
 ## Estrutura
 
@@ -146,15 +147,27 @@ src/
   plugins/         # infra Fastify transversal
     swagger.ts error-handler.ts prisma.ts auth.ts rate-limit.ts
   shared/          # código usado por várias features
-    errors/ db/ auth/ media/
+    errors/ db/ auth/ media/ time/ validation/ gamification/
   features/        # uma pasta por bounded context
     health/ auth/ media/ profile/ exercises/ workout-sheets/ workout-sessions/ activities/ calendar/ progress/
+    admin/         # /admin/* — subpastas audit/ exercises/ users/ achievements/ challenges/
   db/seed/         # seeds da aplicação
-  dev/             # ferramentas de desenvolvimento (mint-token)
+  dev/             # ferramentas de desenvolvimento (mint-token, seed-demo)
+  scripts/         # operação, rodam também em produção (set-role)
 test/              # testes de integração (node:test + app.inject contra o Postgres do .env)
 ```
 
 `app.ts` é separado de `server.ts` para permitir testes que importem `buildApp()` sem abrir porta.
+
+### Painel administrativo (`/admin`)
+
+Todas as rotas `/admin/*` exigem `admin` ou superior; `GET /admin/admins`, `PATCH /admin/admins/:id/role`, `PATCH /admin/users/:id/role` e `GET /admin/audit-logs` exigem `super_user`. Os guards ficam em hooks do escopo registrado em [src/features/admin/index.ts](src/features/admin/index.ts) — rota nova herda o guard só por ser registrada ali. O papel é lido do banco a cada requisição, então promoção/rebaixamento vale no request seguinte. Toda mutação admin grava uma linha em `admin_audit_logs` na mesma transação.
+
+Para criar o primeiro super_user (pela API só um super_user promove alguém):
+
+```bash
+yarn user:set-role --email=voce@exemplo.com --role=super_user
+```
 
 ### Template de feature
 

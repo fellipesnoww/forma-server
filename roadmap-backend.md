@@ -15,7 +15,7 @@
 | 0 — Fundação técnica | 🟨 parcial (Dockerfile e staging pendentes; testes: suíte `node:test` desde a 1.6) |
 | 1 — MVP Core | 🟨 parcial (1.1–1.6 concluídas; 1.0 pendente) |
 | 2 — Completude do usuário | 🟨 parcial (2.1–2.4 concluídas; 2.5 pendente) |
-| 3 — Painel administrativo | ⬜ |
+| 3 — Painel administrativo | ✅ (3.1–3.6 concluídas) |
 | 4 — Gamificação | ⬜ |
 | 5 — Experiência avançada | ⬜ |
 | 6 — Integrações e expansão | ⬜ |
@@ -642,19 +642,19 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Feature package
 
-- [ ] Criar `features/admin/` (subpastas opcionais: `exercises/`, `users/`, `audit/`)
-- [ ] `features/admin/index.ts` registra sub-rotas com prefixo `/admin`
+- [x] Criar `features/admin/` (subpastas `audit/`, `exercises/`, `users/`, `achievements/`, `challenges/`)
+- [x] `features/admin/index.ts` registra sub-rotas com prefixo `/admin`
 
-- [ ] Namespace `/admin` registrado no Fastify
-- [ ] Guard `requireRole('admin')` em rotas admin
-- [ ] Guard `requireRole('super_user')` em rotas exclusivas
-- [ ] Migration: tabela `admin_audit_logs`
-- [ ] Documentação OpenAPI (tag `Admin`, namespace `/admin`)
-- [ ] Testes automatizados: guards de role bloqueiam acesso indevido
+- [x] Namespace `/admin` registrado no Fastify
+- [x] Guard `requireRole('admin')` em rotas admin — hook do escopo `/admin`, herdado por toda rota registrada ali; papel lido do banco a cada request
+- [x] Guard `requireRole('super_user')` em rotas exclusivas
+- [x] Migration: tabela `admin_audit_logs`
+- [x] Documentação OpenAPI (tag `Admin`, namespace `/admin`)
+- [x] Testes automatizados: guards de role bloqueiam acesso indevido
 
 #### SDD
 
-- [ ] `sdd/3.1-infra-admin.md` — documentar namespace, guards e audit log
+- [x] `sdd/3.1-infra-admin.md` — documentar namespace, guards e audit log
 
 ---
 
@@ -662,90 +662,92 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Endpoints
 
-- [ ] `GET /admin/exercises` — lista com filtros (inclui inativos)
-- [ ] `POST /admin/exercises` — cria exercício + upload mídia
-- [ ] `PATCH /admin/exercises/:id` — edita
-- [ ] `PATCH /admin/exercises/:id/status` — ativa/desativa
-- [ ] `GET /admin/muscle-groups` — listagem
-- [ ] `POST /admin/muscle-groups` — cria categoria
-- [ ] `PATCH /admin/muscle-groups/:id` — edita categoria
-- [ ] Documentação OpenAPI (tag `Admin`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] `GET /admin/exercises` — lista com filtros (inclui inativos)
+- [x] `POST /admin/exercises` — cria exercício + upload mídia (base64 no corpo, mídia global legível por qualquer usuário autenticado)
+- [x] `PATCH /admin/exercises/:id` — edita
+- [x] `PATCH /admin/exercises/:id/status` — ativa/desativa
+- [x] `GET /admin/muscle-groups` — listagem
+- [x] `POST /admin/muscle-groups` — cria categoria
+- [x] `PATCH /admin/muscle-groups/:id` — edita categoria
+- [x] Documentação OpenAPI (tag `Admin`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
-- [ ] `sdd/3.2-admin-exercicios.md` — documentar implementação
+- [x] `sdd/3.2-admin-exercicios.md` — documentar implementação
 
 ### 3.3 Gestão de usuários (admin)
 
 #### Endpoints
 
-- [ ] `GET /admin/users` — lista paginada (`?q=&status=&role=`)
-- [ ] `GET /admin/users/:id` — perfil + estatísticas
-- [ ] `PATCH /admin/users/:id/status` — `active` | `inactive` | `banned`
+- [x] `GET /admin/users` — lista paginada (`?q=&status=&role=`)
+- [x] `GET /admin/users/:id` — perfil + estatísticas
+- [x] `PATCH /admin/users/:id/status` — `active` | `inactive` | `banned` (banir/desativar também invalida refresh tokens)
 
 #### Endpoints (super user)
 
-- [ ] `PATCH /admin/users/:id/role` — promove para `admin`
+- [x] `PATCH /admin/users/:id/role` — promove para `admin`
 
 #### Regras de negócio
 
-- [ ] Admin não altera outro admin/super_user (apenas super_user)
-- [ ] Alterações de status/role registradas em audit log
-- [ ] Documentação OpenAPI (tag `Admin`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] Admin não altera outro admin/super_user (apenas super_user)
+- [x] Alterações de status/role registradas em audit log
+- [x] Documentação OpenAPI (tag `Admin`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
-- [ ] `sdd/3.3-admin-usuarios.md` — documentar implementação
+- [x] `sdd/3.3-admin-usuarios.md` — documentar implementação
 
 ### 3.4 Gestão de administradores (super user)
 
 #### Endpoints
 
-- [ ] `GET /admin/admins` — lista admins e super_users
-- [ ] `PATCH /admin/admins/:id/role` — promove/rebaixa
-- [ ] `GET /admin/audit-logs` — log paginado (`?actor_id=&action=&from=&to=`)
-- [ ] Documentação OpenAPI (tag `Admin`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] `GET /admin/admins` — lista admins e super_users
+- [x] `PATCH /admin/admins/:id/role` — promove/rebaixa
+- [x] `GET /admin/audit-logs` — log paginado (`?actorId=&action=&targetType=&targetId=&from=&to=` — camelCase como o resto da API)
+- [x] Documentação OpenAPI (tag `Admin`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
-- [ ] `sdd/3.4-admin-super-user.md` — documentar implementação
+- [x] `sdd/3.4-admin-super-user.md` — documentar implementação
 
 ### 3.5 Conquistas e desafios (admin)
 
 #### Feature package
 
-- [ ] Estender `features/admin/` ou criar `features/achievements/` e `features/challenges/` (modelos admin + endpoints públicos na Fase 4)
+- [x] Estender `features/admin/` ou criar `features/achievements/` e `features/challenges/` (modelos admin + endpoints públicos na Fase 4) — estendido `features/admin/` (`achievements/`, `challenges/`); schemas de `criteria`/`goal` em `shared/gamification/` para a Fase 4 reutilizar
 
 #### Modelagem
 
-- [ ] Migration: tabela `achievements` (`criteria` JSON, `icon_url`, `is_active`)
-- [ ] Migration: tabela `challenges` (`goal` JSON, `starts_at`, `ends_at`, `is_active`)
-- [ ] Migration: tabelas `user_achievements`, `user_challenges` (estrutura base)
+- [x] Migration: tabela `achievements` (`criteria` JSON, `icon_url`, `is_active`)
+- [x] Migration: tabela `challenges` (`goal` JSON, `starts_at`, `ends_at`, `is_active`)
+- [x] Migration: tabelas `user_achievements`, `user_challenges` (estrutura base)
 
 #### Endpoints
 
-- [ ] CRUD `/admin/achievements`
-- [ ] CRUD `/admin/challenges`
-- [ ] `GET /admin/achievements/:id/unlocks` — usuários que desbloquearam
+- [x] CRUD `/admin/achievements`
+- [x] CRUD `/admin/challenges`
+- [x] `GET /admin/achievements/:id/unlocks` — usuários que desbloquearam
 
 #### Regras de negócio
 
-- [ ] Schema de `criteria`: `streak_days`, `workout_count`, `challenge_complete`
-- [ ] Documentação OpenAPI (tag `Admin`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] Schema de `criteria`: `streak_days`, `workout_count`, `challenge_complete` (+ `goal` de desafio: `workout_count`, `activity_count`, `activity_minutes`)
+- [x] Documentação OpenAPI (tag `Admin`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
-- [ ] `sdd/3.5-admin-conquistas-desafios.md` — documentar implementação
+- [x] `sdd/3.5-admin-conquistas-desafios.md` — documentar implementação
 
 ### 3.6 Entrega Fase 3
 
-- [ ] Testes: escalada indevida de permissão bloqueada
-- [ ] Testes: audit log gerado em ações sensíveis
-- [ ] Atualizar `sdd/README.md` com links das etapas 3.1–3.5
+- [x] `sdd/3.6-entrega-fase-3.md` — bootstrap do super_user, matriz de permissões e testes
+
+- [x] Testes: escalada indevida de permissão bloqueada
+- [x] Testes: audit log gerado em ações sensíveis
+- [x] Atualizar `sdd/README.md` com links das etapas 3.1–3.5
 
 ---
 
@@ -1006,7 +1008,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 7. [x] **2.1** — Free activities + activity types
 8. [x] **2.2–2.3** — Calendar + validação retroativa
 9. [x] **2.4** — Progress endpoints
-10. [ ] **Fase 3** — Admin: exercises, users, audit
+10. [x] **Fase 3** — Admin: exercises, users, audit, achievements, challenges
 11. [ ] **Fase 4** — Achievements, challenges, streaks
 12. [ ] **Fase 5** — Push + preferences
 13. [ ] **Fase 6** — Export + sync + health

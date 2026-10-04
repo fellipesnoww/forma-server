@@ -74,6 +74,10 @@ export async function createTestContext(
     close: async () => {
       // `media_assets.owner_id` nao tem FK (Fase 0), entao nao cai no cascade de `users`
       await prisma.mediaAsset.deleteMany({ where: { ownerId: { in: userIds } } });
+      // Audit log usa SET NULL no ator (o historico sobrevive a conta), entao limpa explicito
+      await prisma.adminAuditLog.deleteMany({
+        where: { OR: [{ actorId: { in: userIds } }, { targetId: { in: userIds } }] },
+      });
       await prisma.user.deleteMany({ where: { id: { in: userIds } } });
       await app.close();
     },
@@ -90,4 +94,24 @@ export async function findCatalogExerciseId(ctx: TestContext, user: TestUser): P
   }
 
   return catalog.id;
+}
+
+/** Id do asset a partir da URL devolvida pela API (`.../media/<id>`). */
+export function mediaIdFromUrl(url: string): string {
+  return url.split('/').pop()!;
+}
+
+export interface AuditLogItem {
+  id: string;
+  actor: { id: string; email: string } | null;
+  action: string;
+  targetType: string;
+  targetId: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+/** Linhas de audit log de um alvo, direto do banco (mais recente primeiro). */
+export async function auditLogsFor(targetId: string) {
+  return prisma.adminAuditLog.findMany({ where: { targetId }, orderBy: { createdAt: 'desc' } });
 }

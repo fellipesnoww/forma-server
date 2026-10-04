@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { activitiesRoutes, activityTypesRoutes } from './activities.routes.js';
 
 export { activityResponseSchema } from './activities.schemas.js';
-export { getActivitiesBetween } from './activities.service.js';
+export { getActivitiesBetween, isDefaultActivityType } from './activities.service.js';
 
 /**
  * Uma feature, dois prefixos: tipos (`/activity-types`) existem so para alimentar as
