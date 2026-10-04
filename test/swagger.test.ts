@@ -15,7 +15,7 @@ interface OpenApiDoc {
   paths: Record<string, Record<string, Operation>>;
 }
 
-/** Todas as rotas entregues na Fase 0 e na Fase 1 (1.1–1.5). Rota nova da fase entra aqui. */
+/** Todas as rotas entregues na Fase 0, na Fase 1 (1.1–1.5) e na 2.1. Rota nova entra aqui. */
 const PHASE_ROUTES = [
   'GET /health',
   'GET /health/db',
@@ -49,6 +49,14 @@ const PHASE_ROUTES = [
   'PATCH /workout-sessions/{id}',
   'POST /workout-sessions/{id}/complete',
   'POST /workout-sessions/{id}/photo',
+  'GET /activity-types',
+  'POST /activity-types/custom',
+  'GET /activities',
+  'POST /activities',
+  'GET /activities/{id}',
+  'PATCH /activities/{id}',
+  'DELETE /activities/{id}',
+  'POST /activities/{id}/photo',
 ];
 
 /** Unicas rotas sem bearer: health, e as que emitem/renovam tokens. */

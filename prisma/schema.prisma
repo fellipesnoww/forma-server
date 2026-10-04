@@ -78,6 +78,8 @@ model User {
   customExercises  CustomExercise[]
   workoutSheets    WorkoutSheet[]
   workoutSessions  WorkoutSession[]
+  activityTypes    ActivityType[]
+  freeActivities   FreeActivity[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
@@ -283,4 +285,46 @@ model SessionSet {
 
   @@unique([sessionExerciseId, setNumber])
   @@map("session_sets")
+}
+
+/// Tipo de atividade livre (Fase 2.1). `userId` null = tipo padrao (seed, visivel a todos);
+/// preenchido = tipo personalizado, visivel so ao dono. `slug` identifica os tipos padrao para
+/// o upsert idempotente do seed e fica null nos personalizados (Postgres aceita varios nulls
+/// num unique). Unicidade de nome entre padrao + custom do usuario e checada no servico.
+model ActivityType {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  slug      String?  @unique @db.VarChar(80)
+  name      String   @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user       User?          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities FreeActivity[]
+
+  @@index([userId])
+  @@map("activity_types")
+}
+
+/// Atividade livre registrada pelo usuario (Fase 2.1) — natacao, futebol, corrida etc., fora
+/// das planilhas de musculacao. `performedAt` segue a mesma regra das sessoes (retroativo
+/// permitido, futuro rejeitado) e e o eixo do historico e do calendario (Fase 2.2).
+/// FK do tipo em cascade (e nao restrict): tipo custom so some junto com o usuario, e com
+/// RESTRICT o cascade de `users` falharia ao apagar o tipo antes das atividades que o usam.
+model FreeActivity {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  activityTypeId  String   @map("activity_type_id") @db.Uuid
+  performedAt     DateTime @default(now()) @map("performed_at") @db.Timestamptz(3)
+  durationMinutes Int      @map("duration_minutes")
+  comment         String?  @db.VarChar(1000)
+  photoUrl        String?  @map("photo_url")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityType ActivityType @relation(fields: [activityTypeId], references: [id], onDelete: Cascade)
+
+  @@index([userId, performedAt])
+  @@index([activityTypeId])
+  @@map("free_activities")
 }

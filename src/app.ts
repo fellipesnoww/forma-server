@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 
 import { env } from './config/env.js';
+import { registerActivitiesRoutes } from './features/activities/index.js';
 import { registerAuthRoutes } from './features/auth/index.js';
 import { registerExercisesRoutes } from './features/exercises/index.js';
 import { registerHealthRoutes } from './features/health/index.js';
@@ -73,6 +74,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerExercisesRoutes(app);
   await registerWorkoutSheetsRoutes(app);
   await registerWorkoutSessionsRoutes(app);
+  await registerActivitiesRoutes(app);
 
   return app;
 }

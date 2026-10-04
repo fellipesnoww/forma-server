@@ -15,6 +15,7 @@ assumidas — sempre no passado, sempre no mesmo commit da implementação.
 | 1.4 — Planilha de treino  | [1.4-planilhas.md](1.4-planilhas.md)                     | 2026-09-26 |
 | 1.5 — Execução de treino  | [1.5-sessoes-treino.md](1.5-sessoes-treino.md)           | 2026-10-03 |
 | 1.6 — Entrega Fase 1      | [1.6-entrega-fase-1.md](1.6-entrega-fase-1.md)           | 2026-10-03 |
+| 2.1 — Atividades livres   | [2.1-atividades-livres.md](2.1-atividades-livres.md)     | 2026-10-03 |
 
 ## Como criar um novo documento
 

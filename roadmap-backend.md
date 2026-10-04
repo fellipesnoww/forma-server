@@ -14,7 +14,7 @@
 |---|---|
 | 0 — Fundação técnica | 🟨 parcial (Dockerfile e staging pendentes; testes: suíte `node:test` desde a 1.6) |
 | 1 — MVP Core | 🟨 parcial (1.1–1.6 concluídas; 1.0 pendente) |
-| 2 — Completude do usuário | ⬜ |
+| 2 — Completude do usuário | 🟨 parcial (2.1 concluída) |
 | 3 — Painel administrativo | ⬜ |
 | 4 — Gamificação | ⬜ |
 | 5 — Experiência avançada | ⬜ |
@@ -530,30 +530,30 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Feature package
 
-- [ ] Criar `features/activities/` (`index.ts`, routes, service, repository, schemas)
+- [x] Criar `features/activities/` (`index.ts`, routes, service, repository, schemas)
 
 #### SDD
 
-- [ ] `sdd/2.1-atividades-livres.md` — documentar implementação
+- [x] `sdd/2.1-atividades-livres.md` — documentar implementação
 
 #### Modelagem
 
-- [ ] Migration: tabela `activity_types` (seed + `user_id` nullable para custom)
-- [ ] Migration: tabela `free_activities` (`performed_at`, `duration_minutes`, `photo_url`)
-- [ ] Seed: tipos padrão (natação, futebol, corrida, etc.)
+- [x] Migration: tabela `activity_types` (seed + `user_id` nullable para custom)
+- [x] Migration: tabela `free_activities` (`performed_at`, `duration_minutes`, `photo_url`)
+- [x] Seed: tipos padrão (natação, futebol, corrida, etc.)
 
 #### Endpoints
 
-- [ ] `GET /activity-types` — tipos padrão + custom do usuário
-- [ ] `POST /activity-types/custom` — novo tipo personalizado
-- [ ] `GET /activities` — lista (`?from=&to=`)
-- [ ] `POST /activities` — registra atividade
-- [ ] `GET /activities/:id` — detalhe
-- [ ] `PATCH /activities/:id` — edita
-- [ ] `DELETE /activities/:id` — remove
-- [ ] `POST /activities/:id/photo` — upload foto
-- [ ] Documentação OpenAPI (tag `Atividades`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] `GET /activity-types` — tipos padrão + custom do usuário
+- [x] `POST /activity-types/custom` — novo tipo personalizado
+- [x] `GET /activities` — lista (`?from=&to=`)
+- [x] `POST /activities` — registra atividade
+- [x] `GET /activities/:id` — detalhe
+- [x] `PATCH /activities/:id` — edita
+- [x] `DELETE /activities/:id` — remove
+- [x] `POST /activities/:id/photo` — upload foto
+- [x] Documentação OpenAPI (tag `Atividades`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 ---
 
@@ -589,7 +589,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 ### 2.3 Registro retroativo
 
 - [x] Validação: `performed_at <= now()` (+ tolerância clock skew) — antecipada na 1.5 para sessões (5 min de tolerância, `workout-sessions.schemas.ts`)
-- [ ] Validação aplicada em sessões e atividades (POST/PATCH) — **parcial:** sessões (POST/PATCH) feito na 1.5; atividades dependem da 2.1
+- [x] Validação aplicada em sessões e atividades (POST/PATCH) — sessões na 1.5; atividades na 2.1, com a regra extraída para `shared/validation/performed-at.ts`
 - [ ] Limite retroativo opcional via env (ex.: 90 dias)
 - [ ] Testes: data futura rejeitada
 - [ ] Testes: meia-noite e timezone
@@ -1003,7 +1003,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 4. [x] **1.4** — Workout sheets
 5. [x] **1.5** — Workout sessions + upload foto
 6. [x] **1.2** — Body measurements history
-7. [ ] **2.1** — Free activities + activity types
+7. [x] **2.1** — Free activities + activity types
 8. [ ] **2.2–2.3** — Calendar + validação retroativa
 9. [ ] **2.4** — Progress endpoints
 10. [ ] **Fase 3** — Admin: exercises, users, audit

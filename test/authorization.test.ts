@@ -19,6 +19,8 @@ interface OwnerResources {
   sheetExerciseId: string;
   sessionId: string;
   mediaId: string;
+  activityTypeId: string;
+  activityId: string;
 }
 
 let ctx: TestContext;
@@ -76,6 +78,19 @@ async function seedOwnerResources(): Promise<OwnerResources> {
     payload: { weightKg: 80 },
   });
 
+  const activityType = await ctx.request(owner, {
+    method: 'POST',
+    url: '/activity-types/custom',
+    payload: { name: 'Tipo do dono' },
+  });
+  const activityTypeId = activityType.json<{ id: string }>().id;
+
+  const activity = await ctx.request(owner, {
+    method: 'POST',
+    url: '/activities',
+    payload: { activityTypeId, durationMinutes: 30 },
+  });
+
   return {
     customExerciseId,
     sheetId: sheetJson.id,
@@ -83,6 +98,8 @@ async function seedOwnerResources(): Promise<OwnerResources> {
     sheetExerciseId: sheetJson.days[0]!.exercises[0]!.id,
     sessionId: session.json<{ id: string }>().id,
     mediaId: media.json<{ id: string }>().id,
+    activityTypeId,
+    activityId: activity.json<{ id: string }>().id,
   };
 }
 
@@ -272,6 +289,26 @@ describe('ownership: acesso direto por id', () => {
       }),
       404,
     ],
+    ['GET atividade', () => ({ method: 'GET', url: `/activities/${res.activityId}` }), 404],
+    [
+      'PATCH atividade',
+      () => ({
+        method: 'PATCH',
+        url: `/activities/${res.activityId}`,
+        payload: { durationMinutes: 1 },
+      }),
+      404,
+    ],
+    ['DELETE atividade', () => ({ method: 'DELETE', url: `/activities/${res.activityId}` }), 404],
+    [
+      'POST foto atividade',
+      () => ({
+        method: 'POST',
+        url: `/activities/${res.activityId}/photo`,
+        payload: { data: PNG_1X1_BASE64, mimeType: 'image/png' },
+      }),
+      404,
+    ],
     // Custom exercise responde 403 (nao 404) para dono errado — comportamento da 1.3, ver sdd/1.6
     [
       'PATCH custom exercise',
@@ -323,6 +360,20 @@ describe('ownership: acesso direto por id', () => {
     assert.equal(session.json<{ photoUrl: string | null }>().photoUrl, null);
     assert.equal(custom.name, 'Exercicio do dono');
     assert.equal(custom.deletedAt, null);
+
+    const activity = await ctx.request(owner, {
+      method: 'GET',
+      url: `/activities/${res.activityId}`,
+    });
+
+    assert.equal(activity.statusCode, 200);
+    assert.deepEqual(
+      [
+        activity.json<{ durationMinutes: number }>().durationMinutes,
+        activity.json<{ photoUrl: string | null }>().photoUrl,
+      ],
+      [30, null],
+    );
   });
 });
 
@@ -379,6 +430,43 @@ describe('ownership: referencias cruzadas', () => {
   });
 });
 
+describe('ownership: tipos de atividade', () => {
+  it('atividade com tipo personalizado de outro usuario -> 400 (POST e PATCH)', async () => {
+    const created = await ctx.request(intruder, {
+      method: 'POST',
+      url: '/activities',
+      payload: { activityTypeId: res.activityTypeId, durationMinutes: 20 },
+    });
+    const ownTypes = await ctx.request(intruder, { method: 'GET', url: '/activity-types' });
+    const own = await ctx.request(intruder, {
+      method: 'POST',
+      url: '/activities',
+      payload: {
+        activityTypeId: ownTypes.json<{ items: { id: string }[] }>().items[0]!.id,
+        durationMinutes: 20,
+      },
+    });
+    const patched = await ctx.request(intruder, {
+      method: 'PATCH',
+      url: `/activities/${own.json<{ id: string }>().id}`,
+      payload: { activityTypeId: res.activityTypeId },
+    });
+
+    assert.equal(created.statusCode, 400);
+    assert.equal(patched.statusCode, 400);
+  });
+
+  it('tipo personalizado de outro usuario nao bloqueia o mesmo nome', async () => {
+    const response = await ctx.request(intruder, {
+      method: 'POST',
+      url: '/activity-types/custom',
+      payload: { name: 'Tipo do dono' },
+    });
+
+    assert.equal(response.statusCode, 201);
+  });
+});
+
 describe('ownership: listagens nao vazam dados', () => {
   it('GET /exercises nao inclui custom exercise de outro usuario', async () => {
     const { items } = (await ctx.request(intruder, { method: 'GET', url: '/exercises' })).json<{
@@ -407,6 +495,24 @@ describe('ownership: listagens nao vazam dados', () => {
 
     assert.equal(all.json<{ total: number }>().total, 0);
     assert.equal(bySheet.json<{ total: number }>().total, 0);
+  });
+
+  it('GET /activity-types nao inclui tipo personalizado de outro usuario', async () => {
+    const { items } = (
+      await ctx.request(intruder, { method: 'GET', url: '/activity-types' })
+    ).json<{
+      items: { id: string }[];
+    }>();
+
+    assert.ok(!items.some((item) => item.id === res.activityTypeId));
+  });
+
+  it('GET /activities so traz as atividades do proprio usuario', async () => {
+    const { items } = (await ctx.request(intruder, { method: 'GET', url: '/activities' })).json<{
+      items: { id: string }[];
+    }>();
+
+    assert.ok(!items.some((item) => item.id === res.activityId));
   });
 
   it('GET /profile/measurements so traz o historico do proprio usuario', async () => {

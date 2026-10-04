@@ -4,6 +4,7 @@
  * Cada seeder deve ser idempotente — `yarn db:seed` pode rodar varias vezes no mesmo banco.
  */
 import { prisma } from '../../shared/db/client.js';
+import { seedActivityTypes } from './activity-types.seed.js';
 import { seedExercises } from './exercises.seed.js';
 
 interface Seeder {
@@ -11,7 +12,10 @@ interface Seeder {
   run: () => Promise<void>;
 }
 
-const seeders: Seeder[] = [{ name: 'grupos musculares + exercicios (1.3)', run: seedExercises }];
+const seeders: Seeder[] = [
+  { name: 'grupos musculares + exercicios (1.3)', run: seedExercises },
+  { name: 'tipos de atividade livre (2.1)', run: seedActivityTypes },
+];
 
 async function main(): Promise<void> {
   if (seeders.length === 0) {

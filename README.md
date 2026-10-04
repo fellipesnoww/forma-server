@@ -147,7 +147,7 @@ src/
   shared/          # código usado por várias features
     errors/ db/ auth/ media/
   features/        # uma pasta por bounded context
-    health/ auth/ media/ profile/ exercises/ workout-sheets/ workout-sessions/
+    health/ auth/ media/ profile/ exercises/ workout-sheets/ workout-sessions/ activities/
   db/seed/         # seeds da aplicação
   dev/             # ferramentas de desenvolvimento (mint-token)
 test/              # testes de integração (node:test + app.inject contra o Postgres do .env)

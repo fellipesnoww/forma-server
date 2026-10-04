@@ -1,14 +1,10 @@
 import { z } from 'zod';
 
-/** Tolerancia para relogio do client adiantado ao validar que `performedAt` nao esta no futuro. */
-const PERFORMED_AT_CLOCK_SKEW_MS = 5 * 60 * 1000;
+import { performedAtSchema as sharedPerformedAtSchema } from '../../shared/validation/index.js';
 
-const performedAtSchema = z.iso
-  .datetime({ offset: true })
-  .refine((value) => new Date(value).getTime() <= Date.now() + PERFORMED_AT_CLOCK_SKEW_MS, {
-    message: 'performedAt nao pode estar no futuro',
-  })
-  .describe('Quando o treino foi realizado. Default: agora. Aceita valor passado (retroativo).');
+const performedAtSchema = sharedPerformedAtSchema.describe(
+  'Quando o treino foi realizado. Default: agora. Aceita valor passado (retroativo).',
+);
 
 const sessionSetInputSchema = z.object({
   setNumber: z.number().int().positive(),
