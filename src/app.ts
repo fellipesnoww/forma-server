@@ -50,7 +50,11 @@ export async function buildApp(): Promise<FastifyInstance> {
         }
       : undefined,
   });
-  await app.register(cors, { origin: true });
+  // @fastify/cors defaults to GET,HEAD,POST — browsers need PATCH/DELETE preflights allowed too.
+  await app.register(cors, {
+    origin: true,
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
 
   await app.register(errorHandlerPlugin);
   await app.register(prismaPlugin);
