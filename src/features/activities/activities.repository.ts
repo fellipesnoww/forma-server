@@ -110,3 +110,16 @@ export async function listActivities(
 
   return { items, total };
 }
+
+/** Atividades em `[start, end)`, sem paginacao — usado pelo detalhe do dia do calendario (2.2). */
+export function listActivitiesBetween(
+  userId: string,
+  start: Date,
+  end: Date,
+): Promise<ActivityRow[]> {
+  return prisma.freeActivity.findMany({
+    where: { userId, performedAt: { gte: start, lt: end } },
+    include: activityInclude,
+    orderBy: { performedAt: 'asc' },
+  });
+}

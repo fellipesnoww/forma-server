@@ -166,3 +166,16 @@ export async function listSessions(
 
   return { items, total };
 }
+
+/** Sessoes em `[start, end)`, sem paginacao — usado pelo detalhe do dia do calendario (2.2). */
+export function listSessionsBetween(
+  userId: string,
+  start: Date,
+  end: Date,
+): Promise<SessionSummaryRow[]> {
+  return prisma.workoutSession.findMany({
+    where: { userId, performedAt: { gte: start, lt: end } },
+    include: sessionSummaryInclude,
+    orderBy: { performedAt: 'asc' },
+  });
+}

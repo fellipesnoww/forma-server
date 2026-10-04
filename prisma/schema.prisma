@@ -97,6 +97,9 @@ model UserProfile {
   waistCm               Float?    @map("waist_cm")
   chestCm               Float?    @map("chest_cm")
   onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(3)
+  /// Fuso IANA do usuario (Fase 2.2): define em que dia local cai cada `performedAt` no
+  /// calendario e na progressao. Default pt-BR porque o produto e brasileiro.
+  timezone              String    @default("America/Sao_Paulo") @db.VarChar(64)
   createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -269,6 +272,9 @@ model SessionExercise {
   sets           SessionSet[]
 
   @@index([sessionId, sortOrder])
+  /// Progressao de carga (Fase 2.4): busca as series de um exercicio sem varrer todas as sessoes.
+  @@index([exerciseId, sessionId])
+  @@index([customExerciseId, sessionId])
   @@map("session_exercises")
 }
 

@@ -4,6 +4,7 @@ import { after, before, describe, it } from 'node:test';
 
 import { hasRole } from '../src/shared/auth/index.js';
 import { prisma } from '../src/shared/db/client.js';
+import { todayIn } from '../src/shared/time/index.js';
 import {
   PNG_1X1_BASE64,
   createTestContext,
@@ -513,6 +514,33 @@ describe('ownership: listagens nao vazam dados', () => {
     }>();
 
     assert.ok(!items.some((item) => item.id === res.activityId));
+  });
+
+  it('GET /calendar e /calendar/:date so agregam registros do proprio usuario', async () => {
+    // Sessao e atividade do dono foram criadas agora, entao caem em "hoje" no fuso padrao.
+    // Usuario novo (e nao o intruso): o intruso registra atividade propria em outro teste.
+    const stranger = await ctx.createUser();
+    const today = todayIn('America/Sao_Paulo');
+    const [year, month] = today.split('-');
+    const query = `/calendar?year=${String(Number(year))}&month=${String(Number(month))}`;
+
+    const [ownMonth, theirMonth, ownDay, theirDay] = await Promise.all([
+      ctx.request(owner, { method: 'GET', url: query }),
+      ctx.request(stranger, { method: 'GET', url: query }),
+      ctx.request(owner, { method: 'GET', url: `/calendar/${today}` }),
+      ctx.request(stranger, { method: 'GET', url: `/calendar/${today}` }),
+    ]);
+
+    assert.ok(ownMonth.json<{ days: unknown[] }>().days.length > 0);
+    assert.deepEqual(theirMonth.json<{ days: unknown[] }>().days, []);
+    assert.ok(ownDay.json<{ hasActivity: boolean }>().hasActivity);
+    assert.deepEqual(
+      [
+        theirDay.json<{ workouts: unknown[] }>().workouts,
+        theirDay.json<{ activities: unknown[] }>().activities,
+      ],
+      [[], []],
+    );
   });
 
   it('GET /profile/measurements so traz o historico do proprio usuario', async () => {

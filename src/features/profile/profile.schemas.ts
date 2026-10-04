@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { timezoneSchema } from '../../shared/validation/index.js';
+
 const positiveMeasurement = z.number().positive();
 
 export const measurementFieldsSchema = z.object({
@@ -18,6 +20,9 @@ function requireAtLeastOneField(data: Record<string, unknown>, ctx: z.Refinement
 export const updateProfileBodySchema = measurementFieldsSchema
   .extend({
     displayName: z.string().min(1).max(120).optional(),
+    timezone: timezoneSchema
+      .optional()
+      .describe('Fuso IANA usado pelo calendario e pela progressao, ex.: America/Sao_Paulo'),
   })
   .superRefine(requireAtLeastOneField);
 
@@ -45,6 +50,7 @@ const profileSchema = z.object({
   waistCm: z.number().nullable(),
   chestCm: z.number().nullable(),
   onboardingCompletedAt: z.iso.datetime().nullable(),
+  timezone: z.string(),
 });
 
 export const profileResponseSchema = profileSchema;

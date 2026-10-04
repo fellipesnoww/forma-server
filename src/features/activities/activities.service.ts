@@ -10,6 +10,7 @@ import {
   findVisibleActivityTypeByName,
   findVisibleActivityTypes,
   listActivities,
+  listActivitiesBetween,
   updateActivity,
   type ActivityRow,
 } from './activities.repository.js';
@@ -170,4 +171,13 @@ export async function getActivities(
   });
 
   return { items: items.map(toActivityDto), total, page: query.page, limit: query.limit };
+}
+
+/** Usado por `features/calendar` (detalhe do dia): atividades em `[start, end)`, mais antiga primeiro. */
+export async function getActivitiesBetween(
+  userId: string,
+  start: Date,
+  end: Date,
+): Promise<ActivityDto[]> {
+  return (await listActivitiesBetween(userId, start, end)).map(toActivityDto);
 }

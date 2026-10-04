@@ -14,7 +14,7 @@
 |---|---|
 | 0 — Fundação técnica | 🟨 parcial (Dockerfile e staging pendentes; testes: suíte `node:test` desde a 1.6) |
 | 1 — MVP Core | 🟨 parcial (1.1–1.6 concluídas; 1.0 pendente) |
-| 2 — Completude do usuário | 🟨 parcial (2.1 concluída) |
+| 2 — Completude do usuário | 🟨 parcial (2.1–2.4 concluídas; 2.5 pendente) |
 | 3 — Painel administrativo | ⬜ |
 | 4 — Gamificação | ⬜ |
 | 5 — Experiência avançada | ⬜ |
@@ -561,28 +561,28 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Feature package
 
-- [ ] Criar `features/calendar/` (`index.ts`, routes, service, repository, schemas)
+- [x] Criar `features/calendar/` (`index.ts`, routes, service, repository, schemas)
 
 #### SDD
 
-- [ ] `sdd/2.2-calendario.md` — documentar implementação
+- [x] `sdd/2.2-calendario.md` — documentar implementação
 
 #### Modelagem
 
-- [ ] Campo `timezone` em `user_profiles` (ou convenção documentada com client)
+- [x] Campo `timezone` em `user_profiles` (ou convenção documentada com client)
 
 #### Endpoints
 
-- [ ] `GET /calendar` — agregação mensal (`?year=&month=`)
-- [ ] `GET /calendar/:date` — detalhe do dia (`YYYY-MM-DD`)
+- [x] `GET /calendar` — agregação mensal (`?year=&month=`)
+- [x] `GET /calendar/:date` — detalhe do dia (`YYYY-MM-DD`)
 
 #### Regras de negócio
 
-- [ ] Payload inclui `hasWorkout`, `hasActivity`, `photoUrls[]`, `summary`
-- [ ] Limite configurável de thumbnails por dia
-- [ ] Agregação considera timezone do usuário
-- [ ] Documentação OpenAPI (tag `Calendario`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] Payload inclui `hasWorkout`, `hasActivity`, `photoUrls[]`, `summary`
+- [x] Limite configurável de thumbnails por dia
+- [x] Agregação considera timezone do usuário
+- [x] Documentação OpenAPI (tag `Calendario`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 ---
 
@@ -590,14 +590,14 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [x] Validação: `performed_at <= now()` (+ tolerância clock skew) — antecipada na 1.5 para sessões (5 min de tolerância, `workout-sessions.schemas.ts`)
 - [x] Validação aplicada em sessões e atividades (POST/PATCH) — sessões na 1.5; atividades na 2.1, com a regra extraída para `shared/validation/performed-at.ts`
-- [ ] Limite retroativo opcional via env (ex.: 90 dias)
-- [ ] Testes: data futura rejeitada
-- [ ] Testes: meia-noite e timezone
-- [ ] Documentação OpenAPI: validações refletidas nos schemas das rotas afetadas
+- [x] Limite retroativo opcional via env (ex.: 90 dias)
+- [x] Testes: data futura rejeitada
+- [x] Testes: meia-noite e timezone
+- [x] Documentação OpenAPI: validações refletidas nos schemas das rotas afetadas
 
 #### SDD
 
-- [ ] `sdd/2.3-registro-retroativo.md` — documentar validações e regras de data
+- [x] `sdd/2.3-registro-retroativo.md` — documentar validações e regras de data
 
 ---
 
@@ -605,24 +605,24 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Feature package
 
-- [ ] Criar `features/progress/` (`index.ts`, routes, service, repository, schemas)
+- [x] Criar `features/progress/` (`index.ts`, routes, service, repository, schemas)
 
 #### SDD
 
-- [ ] `sdd/2.4-progressao.md` — documentar implementação
+- [x] `sdd/2.4-progressao.md` — documentar implementação
 
 #### Endpoints
 
-- [ ] `GET /progress/load` — evolução de carga (`?exercise_id=&from=&to=`)
-- [ ] `GET /progress/measurements` — evolução corporal (`?metric=&from=&to=`)
+- [x] `GET /progress/load` — evolução de carga (`?exercise_id=&from=&to=`)
+- [x] `GET /progress/measurements` — evolução corporal (`?metric=&from=&to=`)
 
 #### Implementação
 
-- [ ] Agregação SQL: `max(weight_kg)`, `sum(reps * weight_kg)` por período
-- [ ] Índice: `(user_id, exercise_id, performed_at)`
-- [ ] Filtros: 30, 60, 90 dias e intervalo customizado
-- [ ] Documentação OpenAPI (tag `Progressao`)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] Agregação SQL: `max(weight_kg)`, `sum(reps * weight_kg)` por período
+- [x] Índice: `(user_id, exercise_id, performed_at)` — colunas em tabelas diferentes; entregue como `session_exercises (exercise_id, session_id)` + o `(user_id, performed_at)` existente (ver `sdd/2.4-progressao.md`)
+- [x] Filtros: 30, 60, 90 dias e intervalo customizado
+- [x] Documentação OpenAPI (tag `Progressao`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 ---
 
@@ -630,7 +630,7 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [ ] Testes de performance em agregações de calendário e progressão
 - [ ] Smoke test: atividade retroativa aparece no calendário e nos gráficos
-- [ ] Atualizar `sdd/README.md` com links das etapas 2.1–2.4
+- [x] Atualizar `sdd/README.md` com links das etapas 2.1–2.4
 
 ---
 
@@ -1004,8 +1004,8 @@ Marque na sequência abaixo para minimizar retrabalho:
 5. [x] **1.5** — Workout sessions + upload foto
 6. [x] **1.2** — Body measurements history
 7. [x] **2.1** — Free activities + activity types
-8. [ ] **2.2–2.3** — Calendar + validação retroativa
-9. [ ] **2.4** — Progress endpoints
+8. [x] **2.2–2.3** — Calendar + validação retroativa
+9. [x] **2.4** — Progress endpoints
 10. [ ] **Fase 3** — Admin: exercises, users, audit
 11. [ ] **Fase 4** — Achievements, challenges, streaks
 12. [ ] **Fase 5** — Push + preferences

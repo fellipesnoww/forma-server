@@ -147,7 +147,7 @@ src/
   shared/          # código usado por várias features
     errors/ db/ auth/ media/
   features/        # uma pasta por bounded context
-    health/ auth/ media/ profile/ exercises/ workout-sheets/ workout-sessions/ activities/
+    health/ auth/ media/ profile/ exercises/ workout-sheets/ workout-sessions/ activities/ calendar/ progress/
   db/seed/         # seeds da aplicação
   dev/             # ferramentas de desenvolvimento (mint-token)
 test/              # testes de integração (node:test + app.inject contra o Postgres do .env)
@@ -216,22 +216,24 @@ throw AppError.notFound('Arquivo nao encontrado');
 
 Definidas em `.env` (não versionado) — use `.env.example` como referência. A aplicação **não sobe** se alguma variável obrigatória estiver ausente ou inválida.
 
-| Variável                                                                | Descrição                                    |
-| ----------------------------------------------------------------------- | -------------------------------------------- |
-| `NODE_ENV`                                                              | `development` \| `test` \| `production`      |
-| `PORT` / `HOST`                                                         | Endereço de escuta do servidor               |
-| `LOG_LEVEL`                                                             | Nível do logger (pino)                       |
-| `ENABLE_SWAGGER`                                                        | `true` \| `false` — expõe `/docs`            |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` | Usadas pelo `docker-compose.yml`             |
-| `DATABASE_URL`                                                          | String de conexão usada pela aplicação       |
-| `DB_HEALTH_DEGRADED_MS`                                                 | Acima disso `/health/db` reporta `degraded`  |
-| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`                              | Segredos JWT — mínimo 32 caracteres          |
-| `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL`                                    | Validade dos tokens (`15m`, `30d`)           |
-| `MEDIA_MAX_SIZE_MB`                                                     | Limite do arquivo **decodificado**           |
-| `MEDIA_ALLOWED_MIME_TYPES`                                              | Whitelist de MIME (CSV)                      |
-| `MEDIA_PUBLIC_BASE_URL`                                                 | Prefixo das URLs de mídia (vazio = relativo) |
-| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW`                                  | Limite global de requisições                 |
-| `RATE_LIMIT_UPLOAD_MAX`                                                 | Limite estrito para upload e auth            |
+| Variável                                                                | Descrição                                                         |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `NODE_ENV`                                                              | `development` \| `test` \| `production`                           |
+| `PORT` / `HOST`                                                         | Endereço de escuta do servidor                                    |
+| `LOG_LEVEL`                                                             | Nível do logger (pino)                                            |
+| `ENABLE_SWAGGER`                                                        | `true` \| `false` — expõe `/docs`                                 |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` | Usadas pelo `docker-compose.yml`                                  |
+| `DATABASE_URL`                                                          | String de conexão usada pela aplicação                            |
+| `DB_HEALTH_DEGRADED_MS`                                                 | Acima disso `/health/db` reporta `degraded`                       |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`                              | Segredos JWT — mínimo 32 caracteres                               |
+| `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL`                                    | Validade dos tokens (`15m`, `30d`)                                |
+| `MEDIA_MAX_SIZE_MB`                                                     | Limite do arquivo **decodificado**                                |
+| `MEDIA_ALLOWED_MIME_TYPES`                                              | Whitelist de MIME (CSV)                                           |
+| `MEDIA_PUBLIC_BASE_URL`                                                 | Prefixo das URLs de mídia (vazio = relativo)                      |
+| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW`                                  | Limite global de requisições                                      |
+| `RATE_LIMIT_UPLOAD_MAX`                                                 | Limite estrito para upload e auth                                 |
+| `RETROACTIVE_MAX_DAYS`                                                  | Limite de dias no passado para `performedAt` (vazio = sem limite) |
+| `CALENDAR_MAX_THUMBNAILS`                                               | Miniaturas por dia em `GET /calendar` (default 3)                 |
 
 ## Banco de dados
 

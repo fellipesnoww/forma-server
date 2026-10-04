@@ -16,6 +16,9 @@ assumidas — sempre no passado, sempre no mesmo commit da implementação.
 | 1.5 — Execução de treino  | [1.5-sessoes-treino.md](1.5-sessoes-treino.md)           | 2026-10-03 |
 | 1.6 — Entrega Fase 1      | [1.6-entrega-fase-1.md](1.6-entrega-fase-1.md)           | 2026-10-03 |
 | 2.1 — Atividades livres   | [2.1-atividades-livres.md](2.1-atividades-livres.md)     | 2026-10-03 |
+| 2.2 — Calendário          | [2.2-calendario.md](2.2-calendario.md)                   | 2026-10-03 |
+| 2.3 — Registro retroativo | [2.3-registro-retroativo.md](2.3-registro-retroativo.md) | 2026-10-03 |
+| 2.4 — Progressão          | [2.4-progressao.md](2.4-progressao.md)                   | 2026-10-03 |
 
 ## Como criar um novo documento
 

@@ -16,7 +16,7 @@
     "build": "yarn clean && prisma generate && tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit && tsc --noEmit -p test",
-    "test": "NODE_ENV=test LOG_LEVEL=fatal RATE_LIMIT_MAX=100000 RATE_LIMIT_UPLOAD_MAX=1000 tsx --test 'test/**/*.test.ts'",
+    "test": "NODE_ENV=test LOG_LEVEL=fatal RATE_LIMIT_MAX=100000 RATE_LIMIT_UPLOAD_MAX=1000 RETROACTIVE_MAX_DAYS=3650 CALENDAR_MAX_THUMBNAILS=3 tsx --test 'test/**/*.test.ts'",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

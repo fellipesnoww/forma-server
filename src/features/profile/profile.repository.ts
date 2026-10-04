@@ -17,7 +17,7 @@ export function findProfileByUserId(userId: string): Promise<ProfileRow | null> 
 
 export function updateProfile(
   userId: string,
-  data: MeasurementFields & { displayName?: string },
+  data: MeasurementFields & { displayName?: string; timezone?: string },
 ): Promise<ProfileRow> {
   return prisma.userProfile.update({ where: { userId }, data });
 }

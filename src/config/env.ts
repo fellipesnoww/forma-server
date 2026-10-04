@@ -49,6 +49,16 @@ const envSchema = z
     RATE_LIMIT_WINDOW: z.string().min(1).default('1 minute'),
     RATE_LIMIT_UPLOAD_MAX: z.coerce.number().int().positive().default(10),
 
+    // Registro retroativo (Fase 2.3): quantos dias para tras `performedAt` pode ir.
+    // Vazio = sem limite. Vale para sessoes e atividades (POST e PATCH).
+    RETROACTIVE_MAX_DAYS: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    ),
+
+    // Calendario (Fase 2.2): maximo de miniaturas de foto por dia no GET /calendar
+    CALENDAR_MAX_THUMBNAILS: z.coerce.number().int().min(0).default(3),
+
     // Acima deste tempo de resposta, GET /health/db reporta `degraded` em vez de `ok`
     DB_HEALTH_DEGRADED_MS: z.coerce.number().int().positive().default(250),
   })

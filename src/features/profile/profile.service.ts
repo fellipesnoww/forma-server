@@ -1,5 +1,6 @@
 import { AppError } from '../../shared/errors/index.js';
 import { dbMediaStorage } from '../../shared/media/index.js';
+import { DEFAULT_TIMEZONE } from '../../shared/validation/index.js';
 import {
   createMeasurement,
   findProfileByUserId,
@@ -24,6 +25,7 @@ export interface ProfileDto {
   waistCm: number | null;
   chestCm: number | null;
   onboardingCompletedAt: string | null;
+  timezone: string;
 }
 
 export interface MeasurementDto {
@@ -44,6 +46,7 @@ function toProfileDto(profile: ProfileRow): ProfileDto {
     waistCm: profile.waistCm,
     chestCm: profile.chestCm,
     onboardingCompletedAt: profile.onboardingCompletedAt?.toISOString() ?? null,
+    timezone: profile.timezone,
   };
 }
 
@@ -123,4 +126,12 @@ export async function uploadAvatar(userId: string, input: UploadAvatarBody): Pro
   await updateAvatarUrl(userId, stored.url);
 
   return stored.url;
+}
+
+/**
+ * Fuso do usuario para as features que agrupam por dia local (calendario 2.2, progressao 2.4).
+ * Sem perfil cai no default da coluna em vez de falhar: a agregacao continua respondendo.
+ */
+export async function getUserTimezone(userId: string): Promise<string> {
+  return (await findProfileByUserId(userId))?.timezone ?? DEFAULT_TIMEZONE;
 }

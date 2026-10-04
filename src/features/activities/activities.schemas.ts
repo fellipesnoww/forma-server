@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { performedAtSchema as sharedPerformedAtSchema } from '../../shared/validation/index.js';
 
 const performedAtSchema = sharedPerformedAtSchema.describe(
-  'Quando a atividade foi realizada. Default: agora. Aceita valor passado (retroativo).',
+  `Quando a atividade foi realizada. Default: agora. ${sharedPerformedAtSchema.description ?? ''}`,
 );
 
 /** 24h: uma atividade unica acima disso e quase certamente erro de digitacao. */

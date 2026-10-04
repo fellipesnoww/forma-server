@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { performedAtSchema as sharedPerformedAtSchema } from '../../shared/validation/index.js';
 
 const performedAtSchema = sharedPerformedAtSchema.describe(
-  'Quando o treino foi realizado. Default: agora. Aceita valor passado (retroativo).',
+  `Quando o treino foi realizado. Default: agora. ${sharedPerformedAtSchema.description ?? ''}`,
 );
 
 const sessionSetInputSchema = z.object({

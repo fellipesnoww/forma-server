@@ -6,10 +6,12 @@ import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod
 import { env } from './config/env.js';
 import { registerActivitiesRoutes } from './features/activities/index.js';
 import { registerAuthRoutes } from './features/auth/index.js';
+import { registerCalendarRoutes } from './features/calendar/index.js';
 import { registerExercisesRoutes } from './features/exercises/index.js';
 import { registerHealthRoutes } from './features/health/index.js';
 import { registerMediaRoutes } from './features/media/index.js';
 import { registerProfileRoutes } from './features/profile/index.js';
+import { registerProgressRoutes } from './features/progress/index.js';
 import { registerWorkoutSessionsRoutes } from './features/workout-sessions/index.js';
 import { registerWorkoutSheetsRoutes } from './features/workout-sheets/index.js';
 import authPlugin from './plugins/auth.js';
@@ -75,6 +77,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerWorkoutSheetsRoutes(app);
   await registerWorkoutSessionsRoutes(app);
   await registerActivitiesRoutes(app);
+  await registerCalendarRoutes(app);
+  await registerProgressRoutes(app);
 
   return app;
 }

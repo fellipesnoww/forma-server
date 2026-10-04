@@ -6,6 +6,7 @@ import {
   createSession,
   findSessionDetail,
   listSessions,
+  listSessionsBetween,
   markSessionCompleted,
   replaceSession,
   updateSessionPhotoUrl,
@@ -215,4 +216,13 @@ export async function getSessions(
   });
 
   return { items: items.map(toSummaryDto), total, page: query.page, limit: query.limit };
+}
+
+/** Usado por `features/calendar` (detalhe do dia): sessoes em `[start, end)`, mais antiga primeiro. */
+export async function getSessionsBetween(
+  userId: string,
+  start: Date,
+  end: Date,
+): Promise<SessionSummaryDto[]> {
+  return (await listSessionsBetween(userId, start, end)).map(toSummaryDto);
 }
