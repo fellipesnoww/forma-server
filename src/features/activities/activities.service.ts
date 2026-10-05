@@ -1,6 +1,6 @@
 import type { ActivityType } from '../../generated/prisma/client.js';
 import { AppError } from '../../shared/errors/index.js';
-import { dbMediaStorage } from '../../shared/media/index.js';
+import { mediaStorage } from '../../shared/media/index.js';
 import {
   activityTypeVisibleToUser,
   createActivity,
@@ -140,7 +140,7 @@ export async function removeActivity(userId: string, id: string): Promise<void> 
   await deleteActivity(id);
 }
 
-/** Mesma decisao da foto de sessao (1.5): `dbMediaStorage` sem compressao/resize. */
+/** Mesma decisao da foto de sessao (1.5): `mediaStorage` sem compressao/resize. */
 export async function uploadActivityPhoto(
   userId: string,
   id: string,
@@ -148,7 +148,7 @@ export async function uploadActivityPhoto(
 ): Promise<string> {
   await requireActivity(userId, id);
 
-  const stored = await dbMediaStorage.upload({
+  const stored = await mediaStorage.upload({
     data: input.data,
     declaredMimeType: input.mimeType,
     filename: input.filename,

@@ -4,7 +4,13 @@ import { env } from '../../config/env.js';
 import { STRICT_RATE_LIMIT } from '../../plugins/rate-limit.js';
 import { hasRole } from '../../shared/auth/index.js';
 import { AppError } from '../../shared/errors/index.js';
-import { dbMediaStorage, findMediaOwner } from '../../shared/media/index.js';
+import {
+  buildMediaUrl,
+  findMediaOwner,
+  getDatabaseMediaBinary,
+  mediaStorage,
+  mediaUrlSigner,
+} from '../../shared/media/index.js';
 import {
   errorResponseSchema,
   mediaIdParamsSchema,
@@ -26,8 +32,10 @@ export const mediaRoutes: FastifyPluginAsyncZod = async (app) => {
         summary: 'Envia um arquivo em base64',
         description:
           'Recebe o arquivo em base64, valida MIME (pelo conteudo, nao pelo campo enviado) e ' +
-          `tamanho (max. ${String(env.MEDIA_MAX_SIZE_MB)} MB decodificado) e grava o binario no Postgres. ` +
-          'A `url` retornada e o valor a persistir em campos como avatar_url e photo_url.',
+          `tamanho (max. ${String(env.MEDIA_MAX_SIZE_MB)} MB decodificado) e grava o binario no S3 ` +
+          '(bucket privado). A `url` retornada e pre-assinada: funciona direto em `<img src>`, sem ' +
+          `token, por ${String(env.MEDIA_URL_TTL_SECONDS)} s. Nao a guarde — busque o recurso de novo ` +
+          'para receber uma URL valida.',
         security: [{ bearerAuth: [] }],
         body: uploadMediaBodySchema,
         response: {
@@ -41,7 +49,7 @@ export const mediaRoutes: FastifyPluginAsyncZod = async (app) => {
       },
     },
     async (request, reply) => {
-      const stored = await dbMediaStorage.upload({
+      const stored = await mediaStorage.upload({
         data: request.body.data,
         declaredMimeType: request.body.mimeType,
         filename: request.body.filename,
@@ -58,9 +66,11 @@ export const mediaRoutes: FastifyPluginAsyncZod = async (app) => {
       onRequest: [app.authenticate],
       schema: {
         tags: ['Media'],
-        summary: 'Baixa o binario de um arquivo',
+        summary: 'Baixa o binario de um arquivo (legado)',
         description:
-          'Responde com o binario cru e o Content-Type detectado no upload. ' +
+          'Arquivos no S3 respondem 302 para uma URL pre-assinada. Arquivos legados guardados no ' +
+          'Postgres (bytea) respondem com o binario cru e o Content-Type detectado no upload. ' +
+          'Clientes devem usar a `url` devolvida no upload; esta rota existe para URLs antigas. ' +
           'Acessivel ao dono do arquivo ou a um admin. Midia global (sem dono — imagens do ' +
           'catalogo de exercicios e icones de conquistas, enviadas pelo painel admin) e ' +
           'acessivel a qualquer usuario autenticado.',
@@ -89,7 +99,14 @@ export const mediaRoutes: FastifyPluginAsyncZod = async (app) => {
         throw AppError.notFound('Arquivo nao encontrado');
       }
 
-      const found = await dbMediaStorage.getBinary(request.params.id);
+      // Binario no bucket privado: redireciona para uma URL pre-assinada de curta duracao
+      if (owner.storageKey && mediaUrlSigner) {
+        const ref = buildMediaUrl({ id: request.params.id, storageKey: owner.storageKey });
+
+        return reply.redirect(await mediaUrlSigner.sign(ref), 302);
+      }
+
+      const found = await getDatabaseMediaBinary(request.params.id);
 
       if (!found) {
         throw AppError.notFound('Arquivo nao encontrado');

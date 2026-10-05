@@ -1,5 +1,5 @@
 import { AppError } from '../../shared/errors/index.js';
-import { dbMediaStorage } from '../../shared/media/index.js';
+import { mediaStorage } from '../../shared/media/index.js';
 import { DEFAULT_TIMEZONE } from '../../shared/validation/index.js';
 import {
   createMeasurement,
@@ -109,14 +109,14 @@ export async function getMeasurements(
 }
 
 /**
- * Upload de avatar reaproveita `dbMediaStorage` (Fase 0) tal como esta: sem resize/WebP
- * nem limite de 2 MB dedicado (mesmo descope ja documentado em `sdd/fase-0-fundacao-tecnica.md`).
- * Valida contra o limite global `MEDIA_MAX_SIZE_MB`.
+ * Upload de avatar via `mediaStorage` (S3 privado, URL pre-assinada na resposta): sem resize/WebP nem limite de 2 MB
+ * dedicado (mesmo descope ja documentado em `sdd/fase-0-fundacao-tecnica.md`). Valida contra o
+ * limite global `MEDIA_MAX_SIZE_MB`.
  */
 export async function uploadAvatar(userId: string, input: UploadAvatarBody): Promise<string> {
   await requireProfile(userId);
 
-  const stored = await dbMediaStorage.upload({
+  const stored = await mediaStorage.upload({
     data: input.data,
     declaredMimeType: input.mimeType,
     filename: input.filename,

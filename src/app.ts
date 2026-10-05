@@ -20,9 +20,11 @@ import { registerWorkoutSessionsRoutes } from './features/workout-sessions/index
 import { registerWorkoutSheetsRoutes } from './features/workout-sheets/index.js';
 import authPlugin from './plugins/auth.js';
 import errorHandlerPlugin from './plugins/error-handler.js';
+import mediaUrlsPlugin from './plugins/media-urls.js';
 import prismaPlugin from './plugins/prisma.js';
 import rateLimitPlugin from './plugins/rate-limit.js';
 import { registerSwagger } from './plugins/swagger.js';
+import { mediaUrlSigner } from './shared/media/index.js';
 
 /**
  * A ordem de registro importa e cada linha depende da anterior:
@@ -69,6 +71,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(prismaPlugin);
   await app.register(authPlugin);
   await app.register(rateLimitPlugin);
+  // Antes das rotas: o hook de preSerialization precisa valer para todas
+  await app.register(mediaUrlsPlugin, { signer: mediaUrlSigner });
 
   if (env.ENABLE_SWAGGER) {
     await registerSwagger(app);

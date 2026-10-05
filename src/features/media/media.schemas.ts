@@ -20,7 +20,9 @@ export const mediaIdParamsSchema = z.object({
 
 export const storedMediaSchema = z.object({
   id: z.uuid(),
-  url: z.string().describe('Valor a persistir em avatar_url / photo_url / media_url'),
+  url: z
+    .string()
+    .describe('URL pre-assinada de GET (expira). Use direto em <img src>; nao persista'),
   mimeType: z.string(),
   sizeBytes: z.int().describe('Tamanho do arquivo decodificado'),
   filename: z.string().nullable(),

@@ -58,10 +58,27 @@ const envSchema = z
     GOOGLE_CLIENT_ID: idList(),
     APPLE_CLIENT_ID: idList(),
 
-    // Midia: Fase 0 grava o binario no proprio Postgres (bytea), sem S3/R2
+    // Midia. `s3` grava o binario no bucket e devolve URL publica; `database` grava em
+    // `media_assets.data` (bytea) e serve por GET /media/:id — so para testes/dev sem AWS.
+    MEDIA_STORAGE_DRIVER: z.enum(['s3', 'database']).default('s3'),
     MEDIA_MAX_SIZE_MB: z.coerce.number().positive().default(5),
     MEDIA_ALLOWED_MIME_TYPES: csvList('image/jpeg,image/png,image/webp'),
+    // Prefixo das URLs do driver `database` (vazio = relativo: /media/<uuid>)
     MEDIA_PUBLIC_BASE_URL: z.string().default(''),
+
+    // AWS S3 (driver `s3`). Bucket privado: as respostas trazem URLs pre-assinadas de GET.
+    // Credenciais seguem a cadeia padrao do SDK: AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY
+    // no ambiente, ou role IAM da maquina/container.
+    AWS_REGION: optionalString(),
+    AWS_S3_BUCKET: optionalString(),
+    // Lida pelo proprio SDK; declarada aqui so para validar o formato no boot
+    AWS_ACCESS_KEY_ID: optionalString(),
+    AWS_S3_KEY_PREFIX: z.string().default('media'),
+    // Validade das URLs pre-assinadas. Entre 1 min e 7 dias (teto do SigV4).
+    MEDIA_URL_TTL_SECONDS: z.coerce.number().int().min(60).max(604_800).default(3600),
+    // So para S3 compativel (MinIO, LocalStack, R2). Vazio = AWS.
+    AWS_S3_ENDPOINT: optionalString(),
+    AWS_S3_FORCE_PATH_STYLE: booleanFromString,
 
     // Rate limiting
     RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
@@ -94,6 +111,41 @@ const envSchema = z
     GEMINI_MODEL: z.string().min(1).default('gemini-2.5-flash'),
     CALORIE_AI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
   })
+  .superRefine((config, ctx) => {
+    if (config.MEDIA_STORAGE_DRIVER !== 's3') {
+      return;
+    }
+
+    // Endpoint e so para S3 compativel. Na AWS o SDK monta `<bucket>.s3.<region>...` sozinho;
+    // apontar para o host do bucket duplica o nome e o TLS falha com 500 em todo upload.
+    if (config.AWS_S3_ENDPOINT?.includes('amazonaws.com')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AWS_S3_ENDPOINT'],
+        message: 'deixe vazio para AWS S3 (so para MinIO, LocalStack, R2)',
+      });
+    }
+
+    // Access key id e alfanumerico maiusculo (AKIA..., ASIA...). Com `/` ou `+` e a secret
+    // colada no lugar errado — a AWS responde AuthorizationHeaderMalformed.
+    if (config.AWS_ACCESS_KEY_ID && !/^[A-Z0-9]{16,128}$/.test(config.AWS_ACCESS_KEY_ID)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['AWS_ACCESS_KEY_ID'],
+        message: 'formato invalido (esperado AKIA... de 20 chars) — parece a secret access key',
+      });
+    }
+
+    (['AWS_REGION', 'AWS_S3_BUCKET'] as const).forEach((key) => {
+      if (!config[key]) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: 'obrigatoria com MEDIA_STORAGE_DRIVER=s3 (ou use MEDIA_STORAGE_DRIVER=database)',
+        });
+      }
+    });
+  })
   .transform((config) => {
     const maxSizeBytes = Math.floor(config.MEDIA_MAX_SIZE_MB * 1024 * 1024);
 
@@ -107,6 +159,9 @@ const envSchema = z
       MEDIA_MAX_BASE64_LENGTH: Math.ceil(maxSizeBytes / 3) * 4,
       // Limite do corpo HTTP com folga para o JSON envolvente e o prefixo data URL
       MEDIA_BODY_LIMIT: Math.ceil(maxSizeBytes / 3) * 4 + 4096,
+      // Sem barras nas pontas: a chave final e `<prefixo>/<uuid>.<ext>`
+      AWS_S3_KEY_PREFIX: config.AWS_S3_KEY_PREFIX.replace(/^\/+|\/+$/g, ''),
+      AWS_S3_FORCE_PATH_STYLE: config.AWS_S3_FORCE_PATH_STYLE ?? false,
     };
   });
 

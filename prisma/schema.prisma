@@ -15,17 +15,19 @@ datasource db {
   provider = "postgresql"
 }
 
-/// Arquivo binario armazenado no proprio Postgres (bytea).
-/// Fase 0 nao usa S3/R2: o client envia base64, o servidor decodifica e persiste aqui.
-/// `owner_id` referencia o futuro `users.id` (Fase 1.1) e por isso ainda nao tem FK.
+/// Metadado de cada arquivo enviado. O binario mora no bucket S3 (`storage_key`); `data`
+/// so existe em linhas legadas da Fase 0 (bytea) ou no driver `database` (testes/dev).
+/// `owner_id` nao tem FK: midia global (catalogo) fica com null.
 model MediaAsset {
-  id        String   @id @default(uuid()) @db.Uuid
-  ownerId   String?  @map("owner_id") @db.Uuid
-  mimeType  String   @map("mime_type") @db.VarChar(100)
-  sizeBytes Int      @map("size_bytes")
-  filename  String?  @db.VarChar(255)
-  data      Bytes
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id         String   @id @default(uuid()) @db.Uuid
+  ownerId    String?  @map("owner_id") @db.Uuid
+  mimeType   String   @map("mime_type") @db.VarChar(100)
+  sizeBytes  Int      @map("size_bytes")
+  filename   String?  @db.VarChar(255)
+  /// Chave do objeto no bucket. Null = binario em `data` (legado / driver database).
+  storageKey String?  @unique @map("storage_key") @db.VarChar(512)
+  data       Bytes?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   @@index([ownerId, createdAt])
   @@map("media_assets")
@@ -84,7 +86,7 @@ model User {
   achievements     UserAchievement[]
   challenges       UserChallenge[]
   diets            Diet[]
-  ratings      Rating[]
+  ratings          Rating[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
@@ -514,13 +516,13 @@ enum RatingPlatform {
 /// opcional e de onde veio (plataforma + aparelho). So insercao: o usuario nao edita nem le
 /// as proprias avaliacoes; a leitura e do painel admin (`GET /admin/ratings`).
 model Rating {
-  id          String             @id @default(uuid()) @db.Uuid
-  userId      String             @map("user_id") @db.Uuid
-  rank        Int                @db.SmallInt
-  observation String?            @db.VarChar(2000)
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @map("user_id") @db.Uuid
+  rank        Int            @db.SmallInt
+  observation String?        @db.VarChar(2000)
   platform    RatingPlatform
-  device      String             @db.VarChar(120)
-  date        DateTime           @default(now()) @db.Timestamptz(3)
+  device      String         @db.VarChar(120)
+  date        DateTime       @default(now()) @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

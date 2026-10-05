@@ -109,28 +109,29 @@ Novas áreas da API devem registrar sua tag na lista `tags` do mesmo arquivo (ex
 
 ## Scripts
 
-| Script               | Descrição                                                                             |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `yarn dev`           | Servidor em modo watch (tsx)                                                          |
-| `yarn build`         | Limpa `dist/`, gera o client Prisma e compila TypeScript                              |
-| `yarn start`         | Executa a build de `dist/`                                                            |
-| `yarn typecheck`     | `tsc --noEmit` (código e `test/`)                                                     |
-| `yarn test`          | Testes de integração (`node:test`); exige Postgres + seed                             |
-| `yarn lint`          | ESLint (regras Airbnb)                                                                |
-| `yarn lint:fix`      | ESLint com correção automática                                                        |
-| `yarn format`        | Formata o projeto com Prettier                                                        |
-| `yarn format:check`  | Verifica formatação sem alterar arquivos                                              |
-| `yarn db:up`         | Sobe o container do PostgreSQL                                                        |
-| `yarn db:down`       | Derruba o container (o volume de dados persiste)                                      |
-| `yarn db:generate`   | Gera o Prisma Client em `src/generated/prisma`                                        |
-| `yarn db:migrate`    | Cria e aplica migration em desenvolvimento                                            |
-| `yarn db:deploy`     | Aplica migrations pendentes (produção)                                                |
-| `yarn db:seed`       | Executa os seeds de `src/db/seed/`                                                    |
-| `yarn db:studio`     | Abre o Prisma Studio                                                                  |
-| `yarn db:reset`      | **Apaga o banco**, reaplica migrations e roda os seeds                                |
-| `yarn token:dev`     | Emite um JWT para testar rotas autenticadas (só em dev)                               |
-| `yarn seed:demo`     | Recria 3 usuários de demo com histórico, dietas e avaliações (senha `forma1234`)      |
-| `yarn user:set-role` | Define o papel de uma conta (`--email= --role=`), com audit log; cria o 1º super_user |
+| Script                  | Descrição                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------- |
+| `yarn dev`              | Servidor em modo watch (tsx)                                                          |
+| `yarn build`            | Limpa `dist/`, gera o client Prisma e compila TypeScript                              |
+| `yarn start`            | Executa a build de `dist/`                                                            |
+| `yarn typecheck`        | `tsc --noEmit` (código e `test/`)                                                     |
+| `yarn test`             | Testes de integração (`node:test`); exige Postgres + seed                             |
+| `yarn lint`             | ESLint (regras Airbnb)                                                                |
+| `yarn lint:fix`         | ESLint com correção automática                                                        |
+| `yarn format`           | Formata o projeto com Prettier                                                        |
+| `yarn format:check`     | Verifica formatação sem alterar arquivos                                              |
+| `yarn db:up`            | Sobe o container do PostgreSQL                                                        |
+| `yarn db:down`          | Derruba o container (o volume de dados persiste)                                      |
+| `yarn db:generate`      | Gera o Prisma Client em `src/generated/prisma`                                        |
+| `yarn db:migrate`       | Cria e aplica migration em desenvolvimento                                            |
+| `yarn db:deploy`        | Aplica migrations pendentes (produção)                                                |
+| `yarn db:seed`          | Executa os seeds de `src/db/seed/`                                                    |
+| `yarn db:studio`        | Abre o Prisma Studio                                                                  |
+| `yarn db:reset`         | **Apaga o banco**, reaplica migrations e roda os seeds                                |
+| `yarn token:dev`        | Emite um JWT para testar rotas autenticadas (só em dev)                               |
+| `yarn seed:demo`        | Recria 3 usuários de demo com histórico, dietas e avaliações (senha `forma1234`)      |
+| `yarn user:set-role`    | Define o papel de uma conta (`--email= --role=`), com audit log; cria o 1º super_user |
+| `yarn media:migrate-s3` | Move mídia legada (bytea) para o S3 e reescreve as URLs salvas (`--dry-run` só conta) |
 
 ## Estrutura
 
@@ -230,28 +231,34 @@ throw AppError.notFound('Arquivo nao encontrado');
 
 Definidas em `.env` (não versionado) — use `.env.example` como referência. A aplicação **não sobe** se alguma variável obrigatória estiver ausente ou inválida.
 
-| Variável                                                                | Descrição                                                            |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `NODE_ENV`                                                              | `development` \| `test` \| `production`                              |
-| `PORT` / `HOST`                                                         | Endereço de escuta do servidor                                       |
-| `LOG_LEVEL`                                                             | Nível do logger (pino)                                               |
-| `ENABLE_SWAGGER`                                                        | `true` \| `false` — expõe `/docs`                                    |
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` | Usadas pelo `docker-compose.yml`                                     |
-| `DATABASE_URL`                                                          | String de conexão usada pela aplicação                               |
-| `DB_HEALTH_DEGRADED_MS`                                                 | Acima disso `/health/db` reporta `degraded`                          |
-| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`                              | Segredos JWT — mínimo 32 caracteres                                  |
-| `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL`                                    | Validade dos tokens (`15m`, `30d`)                                   |
-| `MEDIA_MAX_SIZE_MB`                                                     | Limite do arquivo **decodificado**                                   |
-| `MEDIA_ALLOWED_MIME_TYPES`                                              | Whitelist de MIME (CSV)                                              |
-| `MEDIA_PUBLIC_BASE_URL`                                                 | Prefixo das URLs de mídia (vazio = relativo)                         |
-| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW`                                  | Limite global de requisições                                         |
-| `RATE_LIMIT_UPLOAD_MAX`                                                 | Limite estrito para upload e auth                                    |
-| `RETROACTIVE_MAX_DAYS`                                                  | Limite de dias no passado para `performedAt` (vazio = sem limite)    |
-| `CALENDAR_MAX_THUMBNAILS`                                               | Miniaturas por dia em `GET /calendar` (default 3)                    |
-| `CALORIE_AI_PROVIDER`                                                   | `anthropic` \| `gemini` — IA das dietas (vazio = primeiro com chave) |
-| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL`                                 | Claude para estimar calorias (default `claude-opus-5-5`)             |
-| `GEMINI_API_KEY` / `GEMINI_MODEL`                                       | Gemini para estimar calorias (default `gemini-2.5-flash`)            |
-| `CALORIE_AI_TIMEOUT_MS`                                                 | Timeout da chamada à IA (default 30000)                              |
+| Variável                                                                | Descrição                                                             |
+| ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `NODE_ENV`                                                              | `development` \| `test` \| `production`                               |
+| `PORT` / `HOST`                                                         | Endereço de escuta do servidor                                        |
+| `LOG_LEVEL`                                                             | Nível do logger (pino)                                                |
+| `ENABLE_SWAGGER`                                                        | `true` \| `false` — expõe `/docs`                                     |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` / `POSTGRES_PORT` | Usadas pelo `docker-compose.yml`                                      |
+| `DATABASE_URL`                                                          | String de conexão usada pela aplicação                                |
+| `DB_HEALTH_DEGRADED_MS`                                                 | Acima disso `/health/db` reporta `degraded`                           |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`                              | Segredos JWT — mínimo 32 caracteres                                   |
+| `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL`                                    | Validade dos tokens (`15m`, `30d`)                                    |
+| `MEDIA_STORAGE_DRIVER`                                                  | `s3` (padrão, URL pré-assinada) \| `database` (bytea, testes/dev)     |
+| `MEDIA_MAX_SIZE_MB`                                                     | Limite do arquivo **decodificado**                                    |
+| `MEDIA_ALLOWED_MIME_TYPES`                                              | Whitelist de MIME (CSV)                                               |
+| `MEDIA_PUBLIC_BASE_URL`                                                 | Driver `database`: prefixo das URLs de mídia (vazio = relativo)       |
+| `AWS_REGION` / `AWS_S3_BUCKET`                                          | Bucket das imagens — obrigatórias com o driver `s3`                   |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`                           | Credenciais IAM (ou role): `PutObject` + `GetObject` + `DeleteObject` |
+| `MEDIA_URL_TTL_SECONDS`                                                 | Validade das URLs pré-assinadas (default 3600)                        |
+| `AWS_S3_KEY_PREFIX`                                                     | Prefixo das chaves (default `media`)                                  |
+| `AWS_S3_ENDPOINT` / `AWS_S3_FORCE_PATH_STYLE`                           | S3 compatível (MinIO, LocalStack, R2)                                 |
+| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW`                                  | Limite global de requisições                                          |
+| `RATE_LIMIT_UPLOAD_MAX`                                                 | Limite estrito para upload e auth                                     |
+| `RETROACTIVE_MAX_DAYS`                                                  | Limite de dias no passado para `performedAt` (vazio = sem limite)     |
+| `CALENDAR_MAX_THUMBNAILS`                                               | Miniaturas por dia em `GET /calendar` (default 3)                     |
+| `CALORIE_AI_PROVIDER`                                                   | `anthropic` \| `gemini` — IA das dietas (vazio = primeiro com chave)  |
+| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL`                                 | Claude para estimar calorias (default `claude-opus-5-5`)              |
+| `GEMINI_API_KEY` / `GEMINI_MODEL`                                       | Gemini para estimar calorias (default `gemini-2.5-flash`)             |
+| `CALORIE_AI_TIMEOUT_MS`                                                 | Timeout da chamada à IA (default 30000)                               |
 
 ## Banco de dados
 

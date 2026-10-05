@@ -1,7 +1,11 @@
 /** Metadados de um arquivo armazenado. Nunca inclui o binario. */
 export interface StoredMedia {
   id: string;
-  /** URL pronta para persistir em `avatar_url` / `photo_url` / `media_url`. */
+  /**
+   * Valor a persistir em `avatar_url` / `photo_url` / `media_url`: `s3:<chave>` no driver s3
+   * (vira URL pre-assinada na resposta, ver `plugins/media-urls.ts`) ou `/media/<id>` no
+   * driver database.
+   */
   url: string;
   mimeType: string;
   sizeBytes: number;
@@ -20,19 +24,18 @@ export interface MediaUploadInput {
 }
 
 /**
- * Contrato de armazenamento de midia.
+ * Contrato de armazenamento de midia. Implementado por `s3MediaStorage` (padrao) e
+ * `dbMediaStorage` (testes/dev sem AWS); `MEDIA_STORAGE_DRIVER` escolhe qual `mediaStorage`
+ * as features recebem.
  *
- * `upload` recebe base64 e nao `Buffer` de proposito: uma implementacao futura sobre S3/R2
- * precisa decidir sozinha sobre streaming, resize e conversao de formato. Se a interface
- * expusesse `Buffer`, essas decisoes vazariam para quem chama.
+ * `upload` recebe base64 e nao `Buffer` de proposito: a validacao (tamanho, magic number)
+ * e o destino do binario sao decisao da implementacao, nao de quem chama.
  *
- * `getMetadata` e separado de `getBinary` porque a linha do Postgres carrega ate 5 MB em
- * `bytea`: listar midia nunca deve trazer o binario junto. No backend S3 a separacao e
- * ainda mais evidente (metadado no banco, binario no bucket).
+ * O metadado sempre mora em `media_assets`; so o binario muda de lugar. Por isso nao ha
+ * `getBinary` aqui: no S3 o cliente baixa direto do bucket, pela URL pre-assinada.
  */
 export interface MediaService {
   upload(input: MediaUploadInput): Promise<StoredMedia>;
   getMetadata(id: string): Promise<StoredMedia | null>;
-  getBinary(id: string): Promise<{ metadata: StoredMedia; buffer: Buffer } | null>;
   delete(id: string): Promise<void>;
 }

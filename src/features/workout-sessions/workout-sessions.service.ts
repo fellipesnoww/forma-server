@@ -1,7 +1,7 @@
 import { exerciseRefExists } from '../exercises/index.js';
 import { activeSheetBelongsToUser } from '../workout-sheets/index.js';
 import { AppError } from '../../shared/errors/index.js';
-import { dbMediaStorage } from '../../shared/media/index.js';
+import { mediaStorage } from '../../shared/media/index.js';
 import {
   createSession,
   findSessionDetail,
@@ -218,7 +218,7 @@ export async function completeSession(userId: string, id: string): Promise<Sessi
 }
 
 /**
- * Mesma decisao do avatar (1.2): reaproveita `dbMediaStorage` sem compressao/resize — ver
+ * Mesma decisao do avatar (1.2): reaproveita `mediaStorage` sem compressao/resize — ver
  * pendencias em `sdd/1.5-sessoes-treino.md`. A midia anterior nao e apagada.
  */
 export async function uploadSessionPhoto(
@@ -228,7 +228,7 @@ export async function uploadSessionPhoto(
 ): Promise<string> {
   await requireSessionDetail(userId, id);
 
-  const stored = await dbMediaStorage.upload({
+  const stored = await mediaStorage.upload({
     data: input.data,
     declaredMimeType: input.mimeType,
     filename: input.filename,
