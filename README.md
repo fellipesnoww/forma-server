@@ -129,7 +129,7 @@ Novas áreas da API devem registrar sua tag na lista `tags` do mesmo arquivo (ex
 | `yarn db:studio`     | Abre o Prisma Studio                                                                  |
 | `yarn db:reset`      | **Apaga o banco**, reaplica migrations e roda os seeds                                |
 | `yarn token:dev`     | Emite um JWT para testar rotas autenticadas (só em dev)                               |
-| `yarn seed:demo`     | Recria 3 usuários de demo com histórico e dietas (senha `forma1234`)                  |
+| `yarn seed:demo`     | Recria 3 usuários de demo com histórico, dietas e avaliações (senha `forma1234`)      |
 | `yarn user:set-role` | Define o papel de uma conta (`--email= --role=`), com audit log; cria o 1º super_user |
 
 ## Estrutura

@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { adminAchievementsRoutes } from './achievements/admin-achievements.routes.js';
 import { auditRoutes } from './audit/audit.routes.js';
 import { adminChallengesRoutes } from './challenges/admin-challenges.routes.js';
+import { adminRatingsRoutes } from './ratings/admin-ratings.routes.js';
 import { adminExercisesRoutes } from './exercises/admin-exercises.routes.js';
 import { adminUsersRoutes, superUserRoutes } from './users/admin-users.routes.js';
 
@@ -22,6 +23,7 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
       await admin.register(adminUsersRoutes);
       await admin.register(adminAchievementsRoutes);
       await admin.register(adminChallengesRoutes);
+      await admin.register(adminRatingsRoutes);
 
       await admin.register(async (superUser) => {
         superUser.addHook('onRequest', superUser.requireRole('super_user'));

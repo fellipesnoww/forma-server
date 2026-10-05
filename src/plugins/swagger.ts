@@ -38,6 +38,7 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
         { name: 'Progressao', description: 'Evolucao de carga e de medidas corporais' },
         { name: 'Estatisticas', description: 'Numeros agregados do dashboard' },
         { name: 'Dietas', description: 'Dietas, refeicoes, alimentos e estimativa de calorias' },
+        { name: 'Avaliacoes', description: 'Avaliacao do app enviada pelo usuario (nota 1–5)' },
         {
           name: 'Admin',
           description:

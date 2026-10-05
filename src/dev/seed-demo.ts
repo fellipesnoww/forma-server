@@ -1,6 +1,6 @@
 /**
  * Cria 3 usuarios de demonstracao com historico realista: planilhas, sessoes com series e
- * progressao de carga, atividades livres, medidas corporais e dietas (5.3). Serve para ver o calendario
+ * progressao de carga, atividades livres, medidas corporais, dietas (5.3) e avaliacoes do app. Serve para ver o calendario
  * (2.2) e os graficos de progressao (2.4) com dados, e para o front montar telas.
  *
  *   yarn seed:demo
@@ -15,7 +15,7 @@
 import * as argon2 from 'argon2';
 
 import { env } from '../config/env.js';
-import type { FoodUnit } from '../generated/prisma/client.js';
+import type { RatingPlatform, FoodUnit } from '../generated/prisma/client.js';
 import { prisma } from '../shared/db/client.js';
 import { addDays, todayIn } from '../shared/time/index.js';
 
@@ -69,6 +69,16 @@ interface DietPlan {
   meals: { name: string; time: string; foods: FoodPlan[] }[];
 }
 
+/** Avaliacao do app enviada `daysAgo` dias antes de hoje, no horario `time`. */
+interface RatingPlan {
+  daysAgo: number;
+  time: string;
+  rank: number;
+  observation?: string;
+  platform: RatingPlatform;
+  device: string;
+}
+
 interface DemoUser {
   email: string;
   displayName: string;
@@ -89,6 +99,7 @@ interface DemoUser {
   skipChance: number;
   sessionComments: string[];
   diets: DietPlan[];
+  ratings: RatingPlan[];
 }
 
 const DEMO_USERS: DemoUser[] = [
@@ -100,6 +111,24 @@ const DEMO_USERS: DemoUser[] = [
     sheetName: 'ABCD Hipertrofia',
     sessionTime: '18:30',
     skipChance: 0.05,
+    ratings: [
+      {
+        daysAgo: 60,
+        time: '21:10',
+        rank: 4,
+        observation: 'Gosto muito da planilha, mas senti falta de um cronômetro de descanso.',
+        platform: 'mobile',
+        device: 'iPhone 15 · iOS 26.0',
+      },
+      {
+        daysAgo: 5,
+        time: '19:45',
+        rank: 5,
+        observation: 'Agora com as dietas ficou completo!',
+        platform: 'mobile',
+        device: 'iPhone 15 · iOS 26.1',
+      },
+    ],
     sessionComments: [
       'Treino pesado hoje',
       'Boa energia',
@@ -388,6 +417,16 @@ const DEMO_USERS: DemoUser[] = [
     sheetName: 'Full body 3x',
     sessionTime: '07:00',
     skipChance: 0.12,
+    ratings: [
+      {
+        daysAgo: 20,
+        time: '07:30',
+        rank: 3,
+        observation: 'O calendário demora para carregar no navegador.',
+        platform: 'web',
+        device: 'Chrome 140 · Windows 11',
+      },
+    ],
     stallWeeks: [5, 6],
     deloadWeeks: [7],
     sessionComments: ['Antes do trabalho', 'Corrido, treino curto', 'Recorde no terra!'],
@@ -622,6 +661,23 @@ const DEMO_USERS: DemoUser[] = [
     sheetName: 'Treino A/B iniciante',
     sessionTime: '19:00',
     skipChance: 0.08,
+    ratings: [
+      {
+        daysAgo: 12,
+        time: '22:05',
+        rank: 5,
+        platform: 'mobile',
+        device: 'Galaxy S24 · Android 16',
+      },
+      {
+        daysAgo: 2,
+        time: '12:40',
+        rank: 4,
+        observation: 'Seria ótimo registrar natação com distância.',
+        platform: 'web',
+        device: 'Safari 26 · macOS 26',
+      },
+    ],
     offWeeks: [5],
     sessionComments: [
       'Primeira vez sem ajuda do professor',
@@ -1108,9 +1164,20 @@ async function seedUser(user: DemoUser, passwordHash: string, today: string): Pr
   }
   /* eslint-enable no-restricted-syntax, no-await-in-loop */
 
+  await prisma.rating.createMany({
+    data: user.ratings.map((rating) => ({
+      userId: created.id,
+      rank: rating.rank,
+      observation: rating.observation ?? null,
+      platform: rating.platform,
+      device: rating.device,
+      date: localInstant(addDays(today, -rating.daysAgo), rating.time),
+    })),
+  });
+
   const activeDiet = user.diets.find((diet) => diet.active)?.name ?? 'nenhuma ativa';
 
-  return `${user.displayName.padEnd(13)} ${user.email.padEnd(22)} ${String(user.weeks)} semanas · ${String(sessions)} sessoes · ${String(activities)} atividades · ${String(rows.length)} medidas · ${String(user.diets.length)} dietas (${activeDiet})`;
+  return `${user.displayName.padEnd(13)} ${user.email.padEnd(22)} ${String(user.weeks)} semanas · ${String(sessions)} sessoes · ${String(activities)} atividades · ${String(rows.length)} medidas · ${String(user.diets.length)} dietas (${activeDiet}) · ${String(user.ratings.length)} avaliacoes`;
 }
 
 async function main(): Promise<void> {

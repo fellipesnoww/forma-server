@@ -136,6 +136,12 @@
 - [ ] Notificação de novo desafio disponível
 - [ ] Configuração de horário e frequência de lembretes pelo usuário
 
+### Avaliações do app
+- [x] Usuário (web ou mobile) avalia o app com nota de 1 a 5 e observação opcional
+- [x] Registro da plataforma (mobile/web) e do aparelho de onde veio a avaliação
+- [x] Painel admin lista as avaliações com filtros (plataforma, nota, período, usuário) e nota média
+- [ ] Tela de avaliação no app e no web *(cliente)*
+
 ### Modo escuro
 - [ ] Tema escuro completo para mobile e web
 - [ ] Detecção automática do tema do sistema operacional

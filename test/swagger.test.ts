@@ -72,6 +72,7 @@ const PHASE_ROUTES = [
   'DELETE /diets/{id}',
   'POST /diets/{id}/activate',
   'POST /diets/{id}/deactivate',
+  'POST /ratings',
   'GET /admin/exercises',
   'POST /admin/exercises',
   'PATCH /admin/exercises/{id}',
@@ -98,6 +99,7 @@ const PHASE_ROUTES = [
   'GET /admin/challenges/{id}',
   'PATCH /admin/challenges/{id}',
   'DELETE /admin/challenges/{id}',
+  'GET /admin/ratings',
 ];
 
 /** Unicas rotas sem bearer: health, e as que emitem/renovam tokens. */

@@ -84,6 +84,7 @@ model User {
   achievements     UserAchievement[]
   challenges       UserChallenge[]
   diets            Diet[]
+  ratings      Rating[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
@@ -500,4 +501,30 @@ model DietFood {
 
   @@index([mealId, sortOrder])
   @@map("diet_foods")
+}
+
+enum RatingPlatform {
+  mobile
+  web
+
+  @@map("rating_platform")
+}
+
+/// Avaliacao do app feita pelo usuario: nota 1–5 (CHECK no banco, alem do Zod), observacao
+/// opcional e de onde veio (plataforma + aparelho). So insercao: o usuario nao edita nem le
+/// as proprias avaliacoes; a leitura e do painel admin (`GET /admin/ratings`).
+model Rating {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @map("user_id") @db.Uuid
+  rank        Int                @db.SmallInt
+  observation String?            @db.VarChar(2000)
+  platform    RatingPlatform
+  device      String             @db.VarChar(120)
+  date        DateTime           @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([date])
+  @@index([userId, date])
+  @@map("ratings")
 }

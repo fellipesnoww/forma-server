@@ -9,6 +9,7 @@ import { registerAdminRoutes } from './features/admin/index.js';
 import { registerAuthRoutes } from './features/auth/index.js';
 import { registerCalendarRoutes } from './features/calendar/index.js';
 import { registerDietsRoutes } from './features/diets/index.js';
+import { registerRatingsRoutes } from './features/ratings/index.js';
 import { registerExercisesRoutes } from './features/exercises/index.js';
 import { registerHealthRoutes } from './features/health/index.js';
 import { registerMediaRoutes } from './features/media/index.js';
@@ -86,6 +87,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerProgressRoutes(app);
   await registerStatsRoutes(app);
   await registerDietsRoutes(app);
+  await registerRatingsRoutes(app);
   await registerAdminRoutes(app);
 
   return app;

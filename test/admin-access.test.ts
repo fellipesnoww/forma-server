@@ -65,7 +65,7 @@ async function statusesFor(actor: TestUser) {
 
 describe('guards do namespace /admin', () => {
   it('cobre todas as rotas admin documentadas', () => {
-    assert.equal(adminRoutes.length, 26);
+    assert.equal(adminRoutes.length, 27);
     SUPER_ONLY.forEach((route) => {
       assert.ok(
         adminRoutes.some((r) => r.route === route),

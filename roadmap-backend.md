@@ -940,11 +940,42 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [x] `sdd/5.3-dietas.md` — documentar implementação
 
-### 5.4 Entrega Fase 5
+### 5.4 Avaliações do app
+
+#### Feature package
+
+- [x] Criar `features/ratings/` (`index.ts`, routes, service, repository, schemas) — envio pelo usuário
+- [x] Criar `features/admin/ratings/` — leitura no escopo admin (herda os guards de `/admin`)
+
+#### Modelagem
+
+- [x] Migration: tabela `ratings` (`user_id`, `rank` 1–5, `observation?`, `platform`, `device`, `date`)
+- [x] Enum `rating_platform` (`mobile`, `web`)
+- [x] `CHECK (rank BETWEEN 1 AND 5)` no banco, além da validação Zod
+
+#### Endpoints
+
+- [x] `POST /ratings` — qualquer usuário autenticado (user, admin, super_user) envia avaliação
+- [x] `GET /admin/ratings` — admin e super_user; paginado, filtros `platform`/`rank`/`userId`/`from`/`to`, `averageRank` do filtro
+
+#### Regras de negócio
+
+- [x] `date` definida pelo servidor (o client não escolhe a data)
+- [x] Usuário pode avaliar várias vezes; cada envio é uma linha nova (sem edição/remoção)
+- [x] Leitura exclusiva do painel admin (`user` recebe 403)
+- [x] Documentação OpenAPI (tag `Avaliacoes` + `Admin`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
+- [x] Avaliações nos usuários de demo (`yarn seed:demo`)
+
+#### SDD
+
+- [x] `sdd/5.4-avaliacoes.md` — documentar implementação
+
+### 5.5 Entrega Fase 5
 
 - [ ] Testes: preferências respeitadas (usuário opt-out não recebe push)
 - [x] Testes: duplicar planilha preserva ordem e defaults
-- [ ] Atualizar `sdd/README.md` com links das etapas 5.1–5.3
+- [ ] Atualizar `sdd/README.md` com links das etapas 5.1–5.4
 
 ---
 
@@ -1045,7 +1076,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 9. [x] **2.4** — Progress endpoints
 10. [x] **Fase 3** — Admin: exercises, users, audit, achievements, challenges
 11. [ ] **Fase 4** — Achievements, challenges, streaks
-12. [ ] **Fase 5** — Push + preferences (5.1 e 5.3 Dietas entregues)
+12. [ ] **Fase 5** — Push + preferences (5.1, 5.3 Dietas e 5.4 Avaliações entregues)
 13. [ ] **Fase 6** — Export + sync + health
 
 ---
@@ -1059,7 +1090,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 | 2 | Atividades, calendário, progressão | 🔴 Crítica | 4–6 semanas |
 | 3 | Admin completo + auditoria | 🟠 Alta | 3–4 semanas |
 | 4 | Gamificação, streaks, notificações in-app | 🟠 Alta | 3–4 semanas |
-| 5 | Push, duplicar planilha, sugestão de carga, dietas | 🟡 Média | 3–5 semanas |
+| 5 | Push, duplicar planilha, sugestão de carga, dietas, avaliações do app | 🟡 Média | 3–5 semanas |
 | 6 | Export, health sync, offline sync | 🟢 Futura | 4–6 semanas |
 
 ---
