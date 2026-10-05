@@ -480,6 +480,7 @@ describe('estimador Gemini (REST)', () => {
     apiKey: 'test-key',
     model: 'gemini-test',
     timeoutMs: 1000,
+    retryDelayMs: 0,
   });
 
   afterEach(() => {
@@ -488,6 +489,27 @@ describe('estimador Gemini (REST)', () => {
 
   function stubFetch(response: Response) {
     return mock.method(globalThis, 'fetch', async () => response);
+  }
+
+  /** Cada chamada consome o proximo item da fila (Error = falha de rede). */
+  function stubFetchSequence(queue: (Response | Error)[]) {
+    let index = 0;
+
+    return mock.method(globalThis, 'fetch', async () => {
+      const next = queue[index];
+
+      index += 1;
+
+      if (next instanceof Error) {
+        throw next;
+      }
+
+      return next;
+    });
+  }
+
+  function candidate(text?: string): Response {
+    return Response.json({ candidates: [{ content: { parts: text ? [{ text }] : [] } }] });
   }
 
   it('envia a chave no header e pede JSON estruturado; le o primeiro candidato', async () => {
@@ -529,5 +551,38 @@ describe('estimador Gemini (REST)', () => {
       Response.json({ candidates: [{ content: { parts: [{ text: '{"kcal":"muito"}' }] } }] }),
     );
     await assert.rejects(estimator.estimate(input), CalorieEstimatorError);
+  });
+
+  it('sem resposta (5xx, rede, candidato vazio) -> tenta de novo ate 3 vezes', async () => {
+    const fetchMock = stubFetchSequence([
+      new Response('high demand', { status: 503 }),
+      new TypeError('fetch failed'),
+      candidate(),
+      candidate('{"recognized":true,"kcal":89,"notes":"banana prata"}'),
+    ]);
+
+    assert.equal((await estimator.estimate(input)).kcal, 89);
+    assert.equal(fetchMock.mock.callCount(), 4);
+  });
+
+  it('desiste apos 3 novas tentativas', async () => {
+    const fetchMock = stubFetchSequence(
+      Array.from({ length: 4 }, () => new Response('high demand', { status: 503 })),
+    );
+
+    await assert.rejects(estimator.estimate(input), /Erro do Gemini \(503\)/);
+    assert.equal(fetchMock.mock.callCount(), 4);
+  });
+
+  it('erro nao transitorio (4xx) ou formato invalido -> sem nova tentativa', async () => {
+    let fetchMock = stubFetch(new Response('forbidden', { status: 403 }));
+
+    await assert.rejects(estimator.estimate(input), /Erro do Gemini \(403\)/);
+    assert.equal(fetchMock.mock.callCount(), 1);
+
+    mock.restoreAll();
+    fetchMock = stubFetch(candidate('{"kcal":"muito"}'));
+    await assert.rejects(estimator.estimate(input), /fora do formato esperado/);
+    assert.equal(fetchMock.mock.callCount(), 1);
   });
 });
