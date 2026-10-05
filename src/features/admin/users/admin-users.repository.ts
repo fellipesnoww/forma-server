@@ -117,6 +117,31 @@ export async function updateUserAccess(
   });
 }
 
+/**
+ * Ultimo `performedAt` (sessao ou atividade) de cada usuario da pagina — coluna "ultimo
+ * treino" da listagem. Uma query para a pagina inteira em vez de uma por linha; usa os
+ * indices `(user_id, performed_at)` das duas tabelas.
+ */
+export async function lastActivityByUser(
+  db: TransactionClient,
+  ids: string[],
+): Promise<Map<string, Date>> {
+  if (ids.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db.$queryRaw<{ userId: string; lastActivityAt: Date }[]>`
+    SELECT user_id AS "userId", max(performed_at) AS "lastActivityAt"
+    FROM (
+      SELECT user_id, performed_at FROM workout_sessions WHERE user_id = ANY(${ids}::uuid[])
+      UNION ALL
+      SELECT user_id, performed_at FROM free_activities WHERE user_id = ANY(${ids}::uuid[])
+    ) entries
+    GROUP BY user_id`;
+
+  return new Map(rows.map((row) => [row.userId, row.lastActivityAt]));
+}
+
 export interface UserStatsRow {
   workoutSheets: number;
   workoutSessions: number;

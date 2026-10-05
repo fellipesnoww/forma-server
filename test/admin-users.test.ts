@@ -17,6 +17,7 @@ interface UserSummary {
   role: string;
   status: string;
   displayName: string | null;
+  lastActivityAt: string | null;
 }
 
 interface Page<T> {
@@ -112,6 +113,48 @@ describe('GET /admin/users', () => {
   });
 });
 
+describe('lastActivityAt ("ultimo treino")', () => {
+  async function seedHistory(userId: string) {
+    const type = await prisma.activityType.findFirstOrThrow({ where: { userId: null } });
+    const sheet = await prisma.workoutSheet.create({ data: { userId, name: 'Planilha admin' } });
+
+    await prisma.workoutSession.create({
+      data: { userId, sheetId: sheet.id, performedAt: new Date('2026-08-20T10:00:00Z') },
+    });
+    await prisma.freeActivity.create({
+      data: {
+        userId,
+        activityTypeId: type.id,
+        durationMinutes: 30,
+        performedAt: new Date('2026-08-10T10:00:00Z'),
+      },
+    });
+  }
+
+  it('listagem traz o performedAt mais recente entre sessoes e atividades; null sem historico', async () => {
+    const [active, idle] = await Promise.all([ctx.createUser(), ctx.createUser()]);
+    await seedHistory(active.id);
+
+    const page = async (email: string) =>
+      (await ctx.request(admin, { method: 'GET', url: `/admin/users?q=${email}` })).json<
+        Page<UserSummary>
+      >().items[0];
+
+    assert.equal((await page(active.email))?.lastActivityAt, '2026-08-20T10:00:00.000Z');
+    assert.equal((await page(idle.email))?.lastActivityAt, null);
+  });
+
+  it('respostas de PATCH status tambem trazem o campo', async () => {
+    const target = await ctx.createUser();
+    await seedHistory(target.id);
+
+    const response = await patchStatus(admin, target.id, 'inactive');
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json<UserSummary>().lastActivityAt, '2026-08-20T10:00:00.000Z');
+  });
+});
+
 describe('GET /admin/users/:id', () => {
   it('perfil + estatisticas de uso', async () => {
     const target = await ctx.createUser();
@@ -137,6 +180,11 @@ describe('GET /admin/users/:id', () => {
     assert.equal(body.stats.freeActivities, 1);
     assert.equal(body.stats.workoutSessions, 0);
     assert.equal(body.stats.lastActivityAt, performedAt.toISOString());
+    assert.equal(
+      response.json<UserSummary>().lastActivityAt,
+      performedAt.toISOString(),
+      'resumo e stats concordam',
+    );
   });
 
   it('inexistente -> 404', async () => {
@@ -434,5 +482,62 @@ describe('GET /admin/audit-logs (super_user)', () => {
     });
 
     assert.equal(response.statusCode, 400);
+  });
+});
+
+describe('GET /admin/audit-logs/export (super_user)', () => {
+  function exportCsv(actor: TestUser, query: string) {
+    return ctx.request(actor, { method: 'GET', url: `/admin/audit-logs/export${query}` });
+  }
+
+  it('CSV com os mesmos filtros da listagem, mais recentes primeiro', async () => {
+    const actor = await ctx.createUser({ role: 'admin' });
+    const targets = await Promise.all([ctx.createUser(), ctx.createUser()]);
+
+    await patchStatus(actor, targets[0].id, 'inactive', 'motivo, com "aspas"');
+    await patchStatus(actor, targets[1].id, 'banned');
+
+    const response = await exportCsv(superUser, `?actorId=${actor.id}`);
+    const [header, ...rows] = response.body
+      .replace(/^\uFEFF/, '')
+      .trimEnd()
+      .split('\r\n');
+
+    assert.equal(response.statusCode, 200);
+    assert.match(String(response.headers['content-type']), /^text\/csv/);
+    assert.match(
+      String(response.headers['content-disposition']),
+      /attachment; filename="audit-logs-/,
+    );
+    assert.equal(response.headers['x-total-count'], '2');
+    assert.equal(response.headers['x-export-truncated'], 'false');
+    assert.ok(response.body.startsWith('\uFEFF'), 'BOM para o Excel reconhecer UTF-8');
+    assert.equal(header, 'createdAt,actorId,actorEmail,action,targetType,targetId,metadata');
+    assert.equal(rows.length, 2);
+    assert.ok(rows[0]!.includes(targets[1].id), 'mais recente primeiro');
+    assert.ok(rows[0]!.includes(`${actor.id},${actor.email},user.status_changed,user`));
+    // metadata em JSON: aspas duplicadas e celula entre aspas por causa das virgulas
+    assert.ok(rows[1]!.includes('motivo, com \\""aspas\\""'), rows[1]);
+  });
+
+  it('filtro sem resultado: so o cabecalho', async () => {
+    const future = new Date(Date.now() + 60_000).toISOString();
+    const response = await exportCsv(superUser, `?from=${encodeURIComponent(future)}`);
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.headers['x-total-count'], '0');
+    assert.equal(
+      response.body
+        .replace(/^\uFEFF/, '')
+        .trimEnd()
+        .split('\r\n').length,
+      1,
+    );
+  });
+
+  it('admin -> 403; query invalida -> 400', async () => {
+    assert.equal((await exportCsv(admin, '')).statusCode, 403);
+    assert.equal((await exportCsv(superUser, '?action=user.deleted')).statusCode, 400);
+    assert.equal((await exportCsv(superUser, '?page=2')).statusCode, 200, 'paginacao ignorada');
   });
 });

@@ -25,6 +25,9 @@ assumidas — sempre no passado, sempre no mesmo commit da implementação.
 | 3.4 — Gestão de administradores     | [3.4-admin-super-user.md](3.4-admin-super-user.md)                   | 2026-10-04 |
 | 3.5 — Conquistas e desafios (admin) | [3.5-admin-conquistas-desafios.md](3.5-admin-conquistas-desafios.md) | 2026-10-04 |
 | 3.6 — Entrega Fase 3                | [3.6-entrega-fase-3.md](3.6-entrega-fase-3.md)                       | 2026-10-04 |
+| 5.1 — Qualidade de vida no treino   | [5.1-qualidade-vida-treino.md](5.1-qualidade-vida-treino.md)         | 2026-10-04 |
+| 5.3 — Dietas                        | [5.3-dietas.md](5.3-dietas.md)                                       | 2026-10-04 |
+| Ajustes para o design web           | [ajustes-design-web.md](ajustes-design-web.md)                       | 2026-10-04 |
 
 ## Como criar um novo documento
 

@@ -37,7 +37,14 @@ interface CalendarDayDetail {
   hasWorkout: boolean;
   hasActivity: boolean;
   summary: CalendarDay['summary'];
-  workouts: { id: string; performedAt: string; sheetName: string }[];
+  workouts: {
+    id: string;
+    performedAt: string;
+    sheetName: string;
+    exerciseCount: number;
+    setCount: number;
+    durationMinutes: number | null;
+  }[];
   activities: { id: string; performedAt: string; durationMinutes: number }[];
 }
 
@@ -295,6 +302,10 @@ describe('GET /calendar/:date (dia)', () => {
     );
     assert.deepEqual(detail.summary, { workoutCount: 1, activityCount: 2, activityMinutes: 55 });
     assert.equal(detail.workouts[0]!.sheetName, 'Planilha calendario');
+    // Resumo da sessao no detalhe do dia: "N exercicios · M series" sem abrir cada sessao
+    assert.equal(detail.workouts[0]!.exerciseCount, 1);
+    assert.equal(detail.workouts[0]!.setCount, 1);
+    assert.equal(detail.workouts[0]!.durationMinutes, null);
   });
 
   it('dia com registros bate com a agregacao mensal do mesmo dia', async () => {

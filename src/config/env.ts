@@ -20,6 +20,11 @@ function csvList(fallback: string) {
     .pipe(z.array(z.string()).min(1));
 }
 
+/** Variavel opcional em que string vazia (comum no .env) conta como ausente. */
+function optionalString() {
+  return z.preprocess((value) => (value === '' ? undefined : value), z.string().min(1).optional());
+}
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -61,6 +66,19 @@ const envSchema = z
 
     // Acima deste tempo de resposta, GET /health/db reporta `degraded` em vez de `ok`
     DB_HEALTH_DEGRADED_MS: z.coerce.number().int().positive().default(250),
+
+    // Estimativa de calorias por IA (dietas). Sem chave, POST /diets/calorie-estimate
+    // responde 503 e o restante da feature funciona normalmente. Provedor vazio = o
+    // primeiro com chave configurada (Anthropic, depois Gemini).
+    CALORIE_AI_PROVIDER: z.preprocess(
+      (value) => (value === '' ? undefined : value),
+      z.enum(['anthropic', 'gemini']).optional(),
+    ),
+    ANTHROPIC_API_KEY: optionalString(),
+    ANTHROPIC_MODEL: z.string().min(1).default('claude-opus-5-5'),
+    GEMINI_API_KEY: optionalString(),
+    GEMINI_MODEL: z.string().min(1).default('gemini-2.5-flash'),
+    CALORIE_AI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
   })
   .transform((config) => {
     const maxSizeBytes = Math.floor(config.MEDIA_MAX_SIZE_MB * 1024 * 1024);

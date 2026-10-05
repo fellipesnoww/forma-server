@@ -22,6 +22,7 @@ export interface SheetExerciseInput {
   sortOrder: number;
   targetSets?: number;
   targetReps?: number;
+  defaultRestSeconds?: number;
 }
 
 export interface SheetDayInput {
@@ -60,6 +61,7 @@ function daysCreateInput(days: SheetDayInput[]): Prisma.SheetDayCreateWithoutShe
         sortOrder: exercise.sortOrder,
         targetSets: exercise.targetSets,
         targetReps: exercise.targetReps,
+        defaultRestSeconds: exercise.defaultRestSeconds,
       })),
     },
   }));

@@ -42,6 +42,11 @@ export const listAuditLogsQuerySchema = paginationQuerySchema.extend({
   to: z.iso.datetime({ offset: true }).optional().describe('createdAt <= to'),
 });
 
+export const exportAuditLogsQuerySchema = listAuditLogsQuerySchema.omit({
+  page: true,
+  limit: true,
+});
+
 const auditLogSchema = z.object({
   id: z.uuid(),
   actor: z
@@ -58,4 +63,5 @@ const auditLogSchema = z.object({
 export const auditLogListResponseSchema = paginated(auditLogSchema);
 
 export type ListAuditLogsQuery = z.infer<typeof listAuditLogsQuerySchema>;
+export type ExportAuditLogsQuery = z.infer<typeof exportAuditLogsQuerySchema>;
 export type AuditLogDto = z.infer<typeof auditLogSchema>;

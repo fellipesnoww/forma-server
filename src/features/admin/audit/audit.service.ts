@@ -1,11 +1,18 @@
+import { toCsv } from '../../../shared/csv/index.js';
 import { prisma, type TransactionClient } from '../../../shared/db/client.js';
 import type { Prisma } from '../../../generated/prisma/client.js';
 import type { Page } from '../admin.schemas.js';
-import { insertAuditLog, listAuditLogs, type AuditLogRow } from './audit.repository.js';
+import {
+  insertAuditLog,
+  listAuditLogs,
+  listAuditLogsForExport,
+  type AuditLogRow,
+} from './audit.repository.js';
 import type {
   AuditAction,
   AuditLogDto,
   AuditTargetType,
+  ExportAuditLogsQuery,
   ListAuditLogsQuery,
 } from './audit.schemas.js';
 
@@ -53,4 +60,49 @@ export async function getAuditLogs(query: ListAuditLogsQuery): Promise<Page<Audi
   });
 
   return { items: items.map(toDto), total, page: query.page, limit: query.limit };
+}
+
+/**
+ * Teto de linhas por arquivo: o export monta o CSV em memoria, entao um filtro vazio sobre
+ * anos de log nao pode virar uma resposta de centenas de MB. Acima disso o painel filtra por
+ * periodo; `truncated` avisa o client.
+ */
+export const AUDIT_EXPORT_MAX_ROWS = 10_000;
+
+const EXPORT_HEADER = [
+  'createdAt',
+  'actorId',
+  'actorEmail',
+  'action',
+  'targetType',
+  'targetId',
+  'metadata',
+];
+
+export async function exportAuditLogsCsv(
+  query: ExportAuditLogsQuery,
+): Promise<{ csv: string; total: number; truncated: boolean }> {
+  const { items, total } = await listAuditLogsForExport(
+    {
+      ...query,
+      from: query.from ? new Date(query.from) : undefined,
+      to: query.to ? new Date(query.to) : undefined,
+    },
+    AUDIT_EXPORT_MAX_ROWS,
+  );
+
+  const csv = toCsv(
+    EXPORT_HEADER,
+    items.map((row) => [
+      row.createdAt.toISOString(),
+      row.actor?.id ?? row.actorId,
+      row.actor?.email,
+      row.action,
+      row.targetType,
+      row.targetId,
+      row.metadata === null ? null : JSON.stringify(row.metadata),
+    ]),
+  );
+
+  return { csv, total, truncated: total > items.length };
 }

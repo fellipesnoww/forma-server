@@ -6,6 +6,16 @@ const performedAtSchema = sharedPerformedAtSchema.describe(
   `Quando o treino foi realizado. Default: agora. ${sharedPerformedAtSchema.description ?? ''}`,
 );
 
+/** Mesmo teto das atividades livres (2.1): 24h. */
+const durationMinutesSchema = z
+  .number()
+  .int()
+  .min(1)
+  .max(1440)
+  .describe(
+    'Duracao em minutos (1-1440). Opcional: se omitida, o POST /complete calcula a partir de performedAt quando a sessao terminou em ate 24h',
+  );
+
 const sessionSetInputSchema = z.object({
   setNumber: z.number().int().positive(),
   reps: z.number().int().min(0),
@@ -58,6 +68,7 @@ const sessionExerciseInputSchema = z
 export const createWorkoutSessionBodySchema = z.object({
   sheetId: z.uuid(),
   performedAt: performedAtSchema.optional(),
+  durationMinutes: durationMinutesSchema.optional(),
   comment: z.string().max(1000).optional(),
   exercises: z.array(sessionExerciseInputSchema).min(1),
 });
@@ -65,6 +76,7 @@ export const createWorkoutSessionBodySchema = z.object({
 export const updateWorkoutSessionBodySchema = z
   .object({
     performedAt: performedAtSchema.optional(),
+    durationMinutes: durationMinutesSchema.nullable().optional(),
     comment: z.string().max(1000).nullable().optional().describe('null remove o comentario'),
     photoUrl: z
       .null()
@@ -121,6 +133,9 @@ export const sessionSummarySchema = z.object({
   sheetName: z.string(),
   performedAt: z.iso.datetime(),
   completedAt: z.iso.datetime().nullable(),
+  durationMinutes: z.int().nullable().describe('null = nao informada e nao calculavel'),
+  exerciseCount: z.int(),
+  setCount: z.int().describe('Series registradas, marcadas como feitas ou nao'),
   photoUrl: z.string().nullable(),
   comment: z.string().nullable(),
   createdAt: z.iso.datetime(),

@@ -16,6 +16,7 @@ const SUPER_ONLY = new Set([
   'GET /admin/admins',
   'PATCH /admin/admins/{id}/role',
   'GET /admin/audit-logs',
+  'GET /admin/audit-logs/export',
 ]);
 
 let ctx: TestContext;
@@ -64,7 +65,7 @@ async function statusesFor(actor: TestUser) {
 
 describe('guards do namespace /admin', () => {
   it('cobre todas as rotas admin documentadas', () => {
-    assert.equal(adminRoutes.length, 25);
+    assert.equal(adminRoutes.length, 26);
     SUPER_ONLY.forEach((route) => {
       assert.ok(
         adminRoutes.some((r) => r.route === route),

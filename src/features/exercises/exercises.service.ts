@@ -2,16 +2,23 @@ import { AppError } from '../../shared/errors/index.js';
 import {
   createCustomExercise,
   exerciseReferenceExists,
+  findCatalogExerciseById,
   findCatalogExercises,
   findCustomExerciseById,
   findCustomExercises,
+  findLastSessionExercise,
   findMuscleGroupBySlug,
   softDeleteCustomExercise,
   updateCustomExercise,
   type CatalogExerciseRow,
   type CustomExerciseRow,
 } from './exercises.repository.js';
-import type { CreateCustomExerciseBody, UpdateCustomExerciseBody } from './exercises.schemas.js';
+import type {
+  CreateCustomExerciseBody,
+  LastSessionQuery,
+  LastSessionResponse,
+  UpdateCustomExerciseBody,
+} from './exercises.schemas.js';
 
 export interface ExerciseDto {
   id: string;
@@ -113,6 +120,76 @@ export async function editCustomExercise(
 export async function removeCustomExercise(userId: string, id: string): Promise<void> {
   await requireOwnedCustomExercise(userId, id);
   await softDeleteCustomExercise(id);
+}
+
+/**
+ * `:id` aceita catalogo (inclusive desativado) ou custom do proprio usuario (inclusive removido),
+ * para o historico continuar acessivel. Custom de outro usuario conta como inexistente (404).
+ */
+async function resolveExerciseRef(
+  userId: string,
+  id: string,
+): Promise<{ exerciseId?: string; customExerciseId?: string; name: string }> {
+  const catalog = await findCatalogExerciseById(id);
+
+  if (catalog) {
+    return { exerciseId: catalog.id, name: catalog.name };
+  }
+
+  const custom = await findCustomExerciseById(id);
+
+  if (!custom || custom.userId !== userId) {
+    throw AppError.notFound('Exercicio nao encontrado');
+  }
+
+  return { customExerciseId: custom.id, name: custom.name };
+}
+
+function topSet<T extends { weightKg: number; reps: number }>(sets: T[]): T {
+  return sets.reduce((best, set) =>
+    set.weightKg > best.weightKg || (set.weightKg === best.weightKg && set.reps > best.reps)
+      ? set
+      : best,
+  );
+}
+
+export async function getLastSession(
+  userId: string,
+  id: string,
+  query: LastSessionQuery,
+): Promise<LastSessionResponse> {
+  const { name, ...ref } = await resolveExerciseRef(userId, id);
+  const row = await findLastSessionExercise(userId, ref, query.excludeSessionId);
+  const base = {
+    exerciseId: ref.exerciseId ?? null,
+    customExerciseId: ref.customExerciseId ?? null,
+    name,
+  };
+
+  if (!row) {
+    return { ...base, lastSession: null };
+  }
+
+  const sets = row.sets.map((set) => ({
+    setNumber: set.setNumber,
+    reps: set.reps,
+    weightKg: set.weightKg,
+    completed: set.completed,
+  }));
+  const best = topSet(sets);
+
+  return {
+    ...base,
+    lastSession: {
+      sessionId: row.session.id,
+      sheetId: row.session.sheetId,
+      sheetName: row.session.sheet.name,
+      performedAt: row.session.performedAt.toISOString(),
+      completedAt: row.session.completedAt?.toISOString() ?? null,
+      sets,
+      suggestion: { weightKg: best.weightKg, reps: best.reps },
+    },
+  };
 }
 
 /** Usado por `features/workout-sheets` para validar `exerciseId`/`customExerciseId`. */

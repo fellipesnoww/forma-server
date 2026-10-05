@@ -8,11 +8,13 @@ import { registerActivitiesRoutes } from './features/activities/index.js';
 import { registerAdminRoutes } from './features/admin/index.js';
 import { registerAuthRoutes } from './features/auth/index.js';
 import { registerCalendarRoutes } from './features/calendar/index.js';
+import { registerDietsRoutes } from './features/diets/index.js';
 import { registerExercisesRoutes } from './features/exercises/index.js';
 import { registerHealthRoutes } from './features/health/index.js';
 import { registerMediaRoutes } from './features/media/index.js';
 import { registerProfileRoutes } from './features/profile/index.js';
 import { registerProgressRoutes } from './features/progress/index.js';
+import { registerStatsRoutes } from './features/stats/index.js';
 import { registerWorkoutSessionsRoutes } from './features/workout-sessions/index.js';
 import { registerWorkoutSheetsRoutes } from './features/workout-sheets/index.js';
 import authPlugin from './plugins/auth.js';
@@ -58,6 +60,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(cors, {
     origin: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    // Sem isso o browser esconde do JS os headers do download de CSV (nome do arquivo, total)
+    exposedHeaders: ['content-disposition', 'x-total-count', 'x-export-truncated'],
   });
 
   await app.register(errorHandlerPlugin);
@@ -80,6 +84,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await registerActivitiesRoutes(app);
   await registerCalendarRoutes(app);
   await registerProgressRoutes(app);
+  await registerStatsRoutes(app);
+  await registerDietsRoutes(app);
   await registerAdminRoutes(app);
 
   return app;

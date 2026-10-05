@@ -41,7 +41,14 @@ it('login -> planilha -> sessao -> historico', async () => {
   const me: TestUser = { id: user.id, email, token: accessToken };
 
   const whoAmI = await ctx.request(me, { method: 'GET', url: '/auth/me' });
-  assert.equal(whoAmI.json<{ profile: { displayName: string } }>().profile.displayName, 'Smoke');
+  const identity = whoAmI.json<{ user: { createdAt: string }; profile: { displayName: string } }>();
+  assert.equal(identity.profile.displayName, 'Smoke');
+  // "membro desde": criacao da conta, devolvida tambem no login
+  assert.ok(Date.now() - Date.parse(identity.user.createdAt) < 60_000, identity.user.createdAt);
+  assert.equal(
+    login.json<{ user: { createdAt: string } }>().user.createdAt,
+    identity.user.createdAt,
+  );
 
   // 2. Escolhe exercicios: um do catalogo (seed) e um personalizado
   const catalog = await ctx.request(me, { method: 'GET', url: '/exercises?q=supino' });

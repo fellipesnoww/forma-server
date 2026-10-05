@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { dietSummarySchema } from '../diets/index.js';
+
 import { ROLES } from '../../shared/auth/index.js';
 
 const roleSchema = z.enum(ROLES);
@@ -39,6 +41,7 @@ const userSchema = z.object({
   email: z.string(),
   role: roleSchema,
   status: statusSchema,
+  createdAt: z.iso.datetime().describe('Data de criacao da conta ("membro desde")'),
 });
 
 const profileSchema = z.object({
@@ -61,6 +64,9 @@ export const refreshResponseSchema = z.object({
 export const meResponseSchema = z.object({
   user: userSchema,
   profile: profileSchema,
+  activeDiet: dietSummarySchema
+    .nullable()
+    .describe('Dieta ativa (resumo, sem alimentos) ou null; ver /diets'),
 });
 
 export const errorResponseSchema = z.object({

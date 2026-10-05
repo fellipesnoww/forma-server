@@ -266,6 +266,16 @@ describe('ownership: acesso direto por id', () => {
       }),
       404,
     ],
+    [
+      'POST duplicate planilha',
+      () => ({ method: 'POST', url: `/workout-sheets/${res.sheetId}/duplicate` }),
+      404,
+    ],
+    [
+      'GET last-session de custom exercise',
+      () => ({ method: 'GET', url: `/exercises/${res.customExerciseId}/last-session` }),
+      404,
+    ],
     ['GET sessao', () => ({ method: 'GET', url: `/workout-sessions/${res.sessionId}` }), 404],
     [
       'PATCH sessao',

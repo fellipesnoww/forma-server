@@ -49,6 +49,10 @@ export const adminUserSummarySchema = z.object({
   displayName: z.string().nullable(),
   avatarUrl: z.string().nullable(),
   createdAt: z.iso.datetime(),
+  lastActivityAt: z.iso
+    .datetime()
+    .nullable()
+    .describe('performedAt mais recente entre sessoes e atividades livres ("ultimo treino")'),
 });
 
 export const adminUserDetailSchema = adminUserSummarySchema.extend({

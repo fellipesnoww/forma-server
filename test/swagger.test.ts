@@ -15,7 +15,7 @@ interface OpenApiDoc {
   paths: Record<string, Record<string, Operation>>;
 }
 
-/** Todas as rotas entregues nas Fases 0, 1 (1.1–1.5), 2 (2.1–2.4) e 3 (3.1–3.5). Rota nova entra aqui. */
+/** Todas as rotas entregues nas Fases 0, 1 (1.1–1.5), 2 (2.1–2.4), 3 (3.1–3.5) e 5.1. Rota nova entra aqui. */
 const PHASE_ROUTES = [
   'GET /health',
   'GET /health/db',
@@ -34,6 +34,7 @@ const PHASE_ROUTES = [
   'GET /profile/measurements',
   'POST /profile/measurements',
   'GET /exercises',
+  'GET /exercises/{id}/last-session',
   'POST /exercises/custom',
   'PATCH /exercises/custom/{id}',
   'DELETE /exercises/custom/{id}',
@@ -43,6 +44,7 @@ const PHASE_ROUTES = [
   'PATCH /workout-sheets/{id}',
   'DELETE /workout-sheets/{id}',
   'PATCH /workout-sheets/{id}/reorder',
+  'POST /workout-sheets/{id}/duplicate',
   'GET /workout-sessions',
   'POST /workout-sessions',
   'GET /workout-sessions/{id}',
@@ -61,6 +63,15 @@ const PHASE_ROUTES = [
   'GET /calendar/{date}',
   'GET /progress/load',
   'GET /progress/measurements',
+  'GET /stats/overview',
+  'GET /diets',
+  'POST /diets',
+  'POST /diets/calorie-estimate',
+  'GET /diets/{id}',
+  'PATCH /diets/{id}',
+  'DELETE /diets/{id}',
+  'POST /diets/{id}/activate',
+  'POST /diets/{id}/deactivate',
   'GET /admin/exercises',
   'POST /admin/exercises',
   'PATCH /admin/exercises/{id}',
@@ -75,6 +86,7 @@ const PHASE_ROUTES = [
   'GET /admin/admins',
   'PATCH /admin/admins/{id}/role',
   'GET /admin/audit-logs',
+  'GET /admin/audit-logs/export',
   'GET /admin/achievements',
   'POST /admin/achievements',
   'GET /admin/achievements/{id}',

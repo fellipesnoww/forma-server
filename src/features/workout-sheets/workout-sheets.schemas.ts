@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/** Teto do descanso entre series: 1h ja e muito alem de qualquer protocolo real. */
+const MAX_REST_SECONDS = 3600;
+
 function requireExactlyOneExerciseRef(
   data: { exerciseId?: string; customExerciseId?: string },
   ctx: z.RefinementCtx,
@@ -22,6 +25,13 @@ const sheetExerciseInputSchema = z
     sortOrder: z.number().int().min(0),
     targetSets: z.number().int().positive().optional(),
     targetReps: z.number().int().positive().optional(),
+    defaultRestSeconds: z
+      .number()
+      .int()
+      .min(0)
+      .max(MAX_REST_SECONDS)
+      .optional()
+      .describe('Descanso padrao entre series, em segundos (cronometro do client)'),
   })
   .superRefine(requireExactlyOneExerciseRef);
 
@@ -69,6 +79,18 @@ export const reorderExercisesBodySchema = z.object({
   exercises: z.array(z.object({ id: z.uuid(), sortOrder: z.number().int().min(0) })).min(1),
 });
 
+export const duplicateWorkoutSheetBodySchema = z
+  .object({
+    name: z
+      .string()
+      .min(1)
+      .max(120)
+      .optional()
+      .describe("Nome da copia. Default: '<nome original> (copia)'"),
+  })
+  // POST sem body chega como null no Fastify: o client pode duplicar sem enviar nada
+  .nullish();
+
 export const sheetIdParamsSchema = z.object({ id: z.uuid() });
 
 const sheetExerciseSchema = z.object({
@@ -79,6 +101,7 @@ const sheetExerciseSchema = z.object({
   sortOrder: z.int(),
   targetSets: z.int().nullable(),
   targetReps: z.int().nullable(),
+  defaultRestSeconds: z.int().nullable(),
 });
 
 const sheetDaySchema = z.object({
@@ -118,4 +141,5 @@ export const errorResponseSchema = z.object({
 export type CreateWorkoutSheetBody = z.infer<typeof createWorkoutSheetBodySchema>;
 export type UpdateWorkoutSheetBody = z.infer<typeof updateWorkoutSheetBodySchema>;
 export type ReorderExercisesBody = z.infer<typeof reorderExercisesBodySchema>;
+export type DuplicateWorkoutSheetBody = z.infer<typeof duplicateWorkoutSheetBodySchema>;
 export type SheetIdParams = z.infer<typeof sheetIdParamsSchema>;

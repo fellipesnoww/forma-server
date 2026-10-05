@@ -3,6 +3,9 @@ import type { Prisma } from '../../generated/prisma/client.js';
 
 const sessionSummaryInclude = {
   sheet: { select: { name: true } },
+  // So as contagens: o resumo (lista, calendario) mostra "7 exercicios · 26 series" sem
+  // carregar as series de cada sessao
+  exercises: { select: { _count: { select: { sets: true } } } },
 } satisfies Prisma.WorkoutSessionInclude;
 
 const sessionDetailInclude = {
@@ -56,6 +59,7 @@ export function createSession(
   data: {
     sheetId: string;
     performedAt?: Date;
+    durationMinutes?: number;
     comment?: string;
     exercises: SessionExerciseInput[];
   },
@@ -65,6 +69,7 @@ export function createSession(
       userId,
       sheetId: data.sheetId,
       performedAt: data.performedAt,
+      durationMinutes: data.durationMinutes,
       comment: data.comment,
       exercises: { create: exercisesCreateInput(data.exercises) },
     },
@@ -87,6 +92,7 @@ export async function replaceSession(
   id: string,
   data: {
     performedAt?: Date;
+    durationMinutes?: number | null;
     comment?: string | null;
     photoUrl?: null;
     exercises?: SessionExerciseInput[];
@@ -101,6 +107,7 @@ export async function replaceSession(
       where: { id },
       data: {
         performedAt: data.performedAt,
+        durationMinutes: data.durationMinutes,
         comment: data.comment,
         photoUrl: data.photoUrl,
         ...(data.exercises !== undefined
@@ -117,10 +124,14 @@ export async function replaceSession(
  * `completedAt: null` no where torna a escrita condicional: duas chamadas concorrentes nao
  * sobrescrevem o horario de finalizacao da primeira — base da idempotencia de `complete`.
  */
-export async function markSessionCompleted(id: string): Promise<void> {
+export async function markSessionCompleted(
+  id: string,
+  completedAt: Date,
+  durationMinutes?: number,
+): Promise<void> {
   await prisma.workoutSession.updateMany({
     where: { id, completedAt: null },
-    data: { completedAt: new Date() },
+    data: { completedAt, ...(durationMinutes !== undefined ? { durationMinutes } : {}) },
   });
 }
 

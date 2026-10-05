@@ -101,3 +101,44 @@ export async function exerciseReferenceExists(
 
   return false;
 }
+
+/** Catalogo inclusive desativado: o historico de um exercicio desativado continua consultavel. */
+export function findCatalogExerciseById(id: string): Promise<{ id: string; name: string } | null> {
+  return prisma.exercise.findUnique({ where: { id }, select: { id: true, name: true } });
+}
+
+const lastSessionExerciseInclude = {
+  session: { include: { sheet: { select: { name: true } } } },
+  sets: { orderBy: { setNumber: 'asc' } },
+} satisfies Prisma.SessionExerciseInclude;
+
+export type LastSessionExerciseRow = Prisma.SessionExerciseGetPayload<{
+  include: typeof lastSessionExerciseInclude;
+}>;
+
+/**
+ * Ocorrencia mais recente (por `performedAt`) do exercicio nas sessoes do usuario, ignorando
+ * ocorrencias sem series. Se o exercicio aparece duas vezes na mesma sessao, vale a primeira
+ * pela ordem da sessao.
+ */
+export function findLastSessionExercise(
+  userId: string,
+  ref: { exerciseId?: string; customExerciseId?: string },
+  excludeSessionId?: string,
+): Promise<LastSessionExerciseRow | null> {
+  return prisma.sessionExercise.findFirst({
+    where: {
+      ...(ref.exerciseId
+        ? { exerciseId: ref.exerciseId }
+        : { customExerciseId: ref.customExerciseId }),
+      sets: { some: {} },
+      session: { userId, ...(excludeSessionId ? { id: { not: excludeSessionId } } : {}) },
+    },
+    orderBy: [
+      { session: { performedAt: 'desc' } },
+      { session: { createdAt: 'desc' } },
+      { sortOrder: 'asc' },
+    ],
+    include: lastSessionExerciseInclude,
+  });
+}

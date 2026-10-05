@@ -36,6 +36,8 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
         { name: 'Atividades', description: 'Atividades livres e tipos de atividade' },
         { name: 'Calendario', description: 'Treinos e atividades agrupados por dia local' },
         { name: 'Progressao', description: 'Evolucao de carga e de medidas corporais' },
+        { name: 'Estatisticas', description: 'Numeros agregados do dashboard' },
+        { name: 'Dietas', description: 'Dietas, refeicoes, alimentos e estimativa de calorias' },
         {
           name: 'Admin',
           description:

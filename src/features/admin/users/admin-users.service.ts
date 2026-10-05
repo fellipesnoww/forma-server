@@ -1,5 +1,5 @@
 import { hasRole, type Role } from '../../../shared/auth/index.js';
-import type { TransactionClient } from '../../../shared/db/client.js';
+import { prisma, type TransactionClient } from '../../../shared/db/client.js';
 import { AppError } from '../../../shared/errors/index.js';
 import type { UserStatus } from '../../../generated/prisma/client.js';
 import type { AdminActor, Page } from '../admin.schemas.js';
@@ -7,6 +7,7 @@ import { runAudited } from '../audit/audit.service.js';
 import {
   findUserDetail,
   findUserSummary,
+  lastActivityByUser,
   listUsers,
   lockUser,
   updateUserAccess,
@@ -22,7 +23,7 @@ import type {
 
 const ADMIN_ROLES: Role[] = ['admin', 'super_user'];
 
-function toSummary(row: UserSummaryRow): AdminUserSummary {
+function toSummary(row: UserSummaryRow, lastActivityAt: Date | null): AdminUserSummary {
   return {
     id: row.id,
     email: row.email,
@@ -31,7 +32,29 @@ function toSummary(row: UserSummaryRow): AdminUserSummary {
     displayName: row.profile?.displayName ?? null,
     avatarUrl: row.profile?.avatarUrl ?? null,
     createdAt: row.createdAt.toISOString(),
+    lastActivityAt: lastActivityAt?.toISOString() ?? null,
   };
+}
+
+async function toSummaries(
+  db: TransactionClient,
+  rows: UserSummaryRow[],
+): Promise<AdminUserSummary[]> {
+  const lastActivity = await lastActivityByUser(
+    db,
+    rows.map((row) => row.id),
+  );
+
+  return rows.map((row) => toSummary(row, lastActivity.get(row.id) ?? null));
+}
+
+async function withLastActivity(
+  db: TransactionClient,
+  row: UserSummaryRow,
+): Promise<AdminUserSummary> {
+  const [summary] = await toSummaries(db, [row]);
+
+  return summary!;
 }
 
 /**
@@ -51,7 +74,7 @@ export async function getUsers(query: ListUsersQuery): Promise<Page<AdminUserSum
     limit: query.limit,
   });
 
-  return { items: items.map(toSummary), total, page: query.page, limit: query.limit };
+  return { items: await toSummaries(prisma, items), total, page: query.page, limit: query.limit };
 }
 
 export async function getAdmins(query: ListAdminsQuery): Promise<Page<AdminUserSummary>> {
@@ -63,7 +86,7 @@ export async function getAdmins(query: ListAdminsQuery): Promise<Page<AdminUserS
     limit: query.limit,
   });
 
-  return { items: items.map(toSummary), total, page: query.page, limit: query.limit };
+  return { items: await toSummaries(prisma, items), total, page: query.page, limit: query.limit };
 }
 
 export async function getUserDetail(id: string): Promise<AdminUserDetail> {
@@ -74,7 +97,7 @@ export async function getUserDetail(id: string): Promise<AdminUserDetail> {
   }
 
   return {
-    ...toSummary(user),
+    ...toSummary(user, stats.lastActivityAt),
     updatedAt: user.updatedAt.toISOString(),
     authMethods: { password: user.passwordHash !== null, oauthProvider: user.oauthProvider },
     profile: {
@@ -94,7 +117,7 @@ async function currentSummary(tx: TransactionClient, id: string): Promise<AdminU
     throw AppError.notFound('Usuario nao encontrado');
   }
 
-  return toSummary(row);
+  return withLastActivity(tx, row);
 }
 
 /**
@@ -143,7 +166,7 @@ export function changeUserStatus(
       },
     });
 
-    return toSummary(updated);
+    return withLastActivity(tx, updated);
   });
 }
 
@@ -206,6 +229,6 @@ export function changeUserRole(
       },
     });
 
-    return toSummary(updated);
+    return withLastActivity(tx, updated);
   });
 }

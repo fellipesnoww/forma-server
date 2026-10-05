@@ -44,6 +44,9 @@ export interface SessionSummaryDto {
   sheetName: string;
   performedAt: string;
   completedAt: string | null;
+  durationMinutes: number | null;
+  exerciseCount: number;
+  setCount: number;
   photoUrl: string | null;
   comment: string | null;
   createdAt: string;
@@ -54,13 +57,24 @@ export interface SessionDetailDto extends SessionSummaryDto {
   exercises: SessionExerciseDto[];
 }
 
-function toSummaryDto(session: SessionSummaryRow): SessionSummaryDto {
+/** Resumo e detalhe trazem `exercises` em formatos diferentes; aqui so importa contar. */
+function countSets(exercises: ({ _count: { sets: number } } | { sets: unknown[] })[]): number {
+  return exercises.reduce(
+    (total, exercise) => total + ('sets' in exercise ? exercise.sets.length : exercise._count.sets),
+    0,
+  );
+}
+
+function toSummaryDto(session: SessionSummaryRow | SessionDetailRow): SessionSummaryDto {
   return {
     id: session.id,
     sheetId: session.sheetId,
     sheetName: session.sheet.name,
     performedAt: session.performedAt.toISOString(),
     completedAt: session.completedAt?.toISOString() ?? null,
+    durationMinutes: session.durationMinutes,
+    exerciseCount: session.exercises.length,
+    setCount: countSets(session.exercises),
     photoUrl: session.photoUrl,
     comment: session.comment,
     createdAt: session.createdAt.toISOString(),
@@ -131,6 +145,7 @@ export async function addSession(
   const session = await createSession(userId, {
     sheetId: input.sheetId,
     performedAt: input.performedAt ? new Date(input.performedAt) : undefined,
+    durationMinutes: input.durationMinutes,
     comment: input.comment,
     exercises: input.exercises,
   });
@@ -155,12 +170,30 @@ export async function editSession(
 
   const session = await replaceSession(id, {
     performedAt: input.performedAt ? new Date(input.performedAt) : undefined,
+    durationMinutes: input.durationMinutes,
     comment: input.comment,
     photoUrl: input.photoUrl,
     exercises: input.exercises,
   });
 
   return toDetailDto(session);
+}
+
+const MAX_SESSION_MINUTES = 1440;
+
+/**
+ * Duracao de uma sessao executada ao vivo (`performedAt` = inicio, agora = fim). Fora de
+ * (0, 24h] o intervalo nao representa o treino — registro retroativo finalizado dias depois,
+ * ou `performedAt` no futuro dentro da tolerancia de relogio — e a duracao fica sem valor.
+ */
+function elapsedMinutes(start: Date, end: Date): number | undefined {
+  const minutes = Math.round((end.getTime() - start.getTime()) / 60_000);
+
+  if (end <= start || minutes > MAX_SESSION_MINUTES) {
+    return undefined;
+  }
+
+  return Math.max(1, minutes);
 }
 
 /**
@@ -175,7 +208,11 @@ export async function completeSession(userId: string, id: string): Promise<Sessi
     return toDetailDto(session);
   }
 
-  await markSessionCompleted(id);
+  const completedAt = new Date();
+  const durationMinutes =
+    session.durationMinutes === null ? elapsedMinutes(session.performedAt, completedAt) : undefined;
+
+  await markSessionCompleted(id, completedAt, durationMinutes);
 
   return getSessionDetail(userId, id);
 }

@@ -1,6 +1,6 @@
 /**
  * Cria 3 usuarios de demonstracao com historico realista: planilhas, sessoes com series e
- * progressao de carga, atividades livres e medidas corporais. Serve para ver o calendario
+ * progressao de carga, atividades livres, medidas corporais e dietas (5.3). Serve para ver o calendario
  * (2.2) e os graficos de progressao (2.4) com dados, e para o front montar telas.
  *
  *   yarn seed:demo
@@ -15,6 +15,7 @@
 import * as argon2 from 'argon2';
 
 import { env } from '../config/env.js';
+import type { FoodUnit } from '../generated/prisma/client.js';
 import { prisma } from '../shared/db/client.js';
 import { addDays, todayIn } from '../shared/time/index.js';
 
@@ -57,6 +58,17 @@ interface MeasurementPlan {
   heightCm: number;
 }
 
+/** `kcal` da porcao inteira, com valores medios da tabela TACO. */
+type FoodPlan = [name: string, quantity: number, unit: FoodUnit, kcal: number];
+
+interface DietPlan {
+  name: string;
+  goal?: string;
+  /** No maximo uma por usuario (regra da 5.3). */
+  active?: boolean;
+  meals: { name: string; time: string; foods: FoodPlan[] }[];
+}
+
 interface DemoUser {
   email: string;
   displayName: string;
@@ -76,6 +88,7 @@ interface DemoUser {
   /** Chance de faltar a uma sessao planejada. */
   skipChance: number;
   sessionComments: string[];
+  diets: DietPlan[];
 }
 
 const DEMO_USERS: DemoUser[] = [
@@ -263,6 +276,109 @@ const DEMO_USERS: DemoUser[] = [
       },
     ],
     measurements: { weightKg: [62, 60.5], waistCm: [72, 69], chestCm: [88, 89], heightCm: 165 },
+    diets: [
+      {
+        name: 'Definição leve',
+        goal: 'Perder gordura mantendo a massa magra',
+        active: true,
+        meals: [
+          {
+            name: 'Café da manhã',
+            time: '07:00',
+            foods: [
+              ['Ovo cozido', 100, 'G', 146],
+              ['Pão integral', 50, 'G', 127],
+              ['Leite desnatado', 200, 'ML', 70],
+              ['Mamão papaia', 100, 'G', 40],
+            ],
+          },
+          {
+            name: 'Lanche da manhã',
+            time: '10:00',
+            foods: [
+              ['Iogurte natural desnatado', 170, 'G', 70],
+              ['Granola sem açúcar', 20, 'G', 84],
+            ],
+          },
+          {
+            name: 'Almoço',
+            time: '12:30',
+            foods: [
+              ['Arroz integral cozido', 100, 'G', 124],
+              ['Feijão carioca cozido', 100, 'G', 76],
+              ['Peito de frango grelhado', 120, 'G', 191],
+              ['Salada de folhas', 80, 'G', 12],
+              ['Azeite de oliva', 5, 'ML', 41],
+            ],
+          },
+          {
+            name: 'Pré-treino',
+            time: '17:30',
+            foods: [
+              ['Banana prata', 80, 'G', 78],
+              ['Whey protein', 30, 'G', 120],
+            ],
+          },
+          {
+            name: 'Jantar',
+            time: '20:30',
+            foods: [
+              ['Tilápia grelhada', 120, 'G', 154],
+              ['Batata-doce cozida', 150, 'G', 116],
+              ['Brócolis cozido', 100, 'G', 25],
+            ],
+          },
+          { name: 'Ceia', time: '22:30', foods: [['Castanha-do-pará', 10, 'G', 64]] },
+        ],
+      },
+      {
+        name: 'Manutenção',
+        goal: 'Manter o peso nas férias',
+        meals: [
+          {
+            name: 'Café da manhã',
+            time: '08:00',
+            foods: [
+              ['Tapioca', 60, 'G', 144],
+              ['Queijo minas frescal', 30, 'G', 79],
+              ['Café com leite', 200, 'ML', 98],
+              ['Mamão papaia', 150, 'G', 60],
+            ],
+          },
+          {
+            name: 'Almoço',
+            time: '13:00',
+            foods: [
+              ['Arroz branco cozido', 150, 'G', 192],
+              ['Feijão carioca cozido', 100, 'G', 76],
+              ['Carne bovina grelhada', 120, 'G', 262],
+              ['Salada de tomate', 100, 'G', 15],
+              ['Laranja', 150, 'G', 71],
+            ],
+          },
+          {
+            name: 'Lanche',
+            time: '16:30',
+            foods: [
+              ['Pão integral', 50, 'G', 127],
+              ['Pasta de amendoim', 15, 'G', 88],
+              ['Banana prata', 100, 'G', 98],
+            ],
+          },
+          {
+            name: 'Jantar',
+            time: '20:00',
+            foods: [
+              ['Omelete de 2 ovos', 120, 'G', 186],
+              ['Arroz integral cozido', 100, 'G', 124],
+              ['Salada de folhas', 100, 'G', 15],
+              ['Azeite de oliva', 5, 'ML', 41],
+            ],
+          },
+          { name: 'Ceia', time: '22:00', foods: [['Iogurte natural', 170, 'G', 87]] },
+        ],
+      },
+    ],
   },
   {
     email: 'bruno.demo@forma.dev',
@@ -400,6 +516,103 @@ const DEMO_USERS: DemoUser[] = [
       },
     ],
     measurements: { weightKg: [84, 80], waistCm: [92, 88], chestCm: [104, 105], heightCm: 180 },
+    diets: [
+      {
+        name: 'Cutting 2.000',
+        goal: 'Perder 4 kg até o fim do trimestre',
+        active: true,
+        meals: [
+          {
+            name: 'Pré-treino',
+            time: '06:15',
+            foods: [
+              ['Banana nanica', 100, 'G', 92],
+              ['Café preto', 100, 'ML', 3],
+            ],
+          },
+          {
+            name: 'Café da manhã',
+            time: '08:30',
+            foods: [
+              ['Ovo cozido', 150, 'G', 219],
+              ['Pão francês', 50, 'G', 150],
+              ['Queijo minas frescal', 30, 'G', 79],
+              ['Leite desnatado', 250, 'ML', 88],
+            ],
+          },
+          {
+            name: 'Almoço',
+            time: '12:00',
+            foods: [
+              ['Arroz branco cozido', 150, 'G', 192],
+              ['Feijão preto cozido', 100, 'G', 77],
+              ['Patinho moído refogado', 150, 'G', 327],
+              ['Salada de folhas', 100, 'G', 15],
+              ['Azeite de oliva', 10, 'ML', 82],
+            ],
+          },
+          {
+            name: 'Lanche da tarde',
+            time: '16:00',
+            foods: [
+              ['Whey protein', 30, 'G', 120],
+              ['Aveia em flocos', 30, 'G', 118],
+              ['Maçã', 130, 'G', 73],
+            ],
+          },
+          {
+            name: 'Jantar',
+            time: '20:00',
+            foods: [
+              ['Peito de frango grelhado', 0.15, 'KG', 239],
+              ['Arroz branco cozido', 100, 'G', 128],
+              ['Abobrinha refogada', 100, 'G', 25],
+            ],
+          },
+        ],
+      },
+      {
+        name: 'Bulking limpo',
+        goal: 'Ganhar massa no inverno',
+        meals: [
+          {
+            name: 'Café da manhã',
+            time: '07:30',
+            foods: [
+              ['Aveia em flocos', 60, 'G', 236],
+              ['Leite integral', 300, 'ML', 183],
+              ['Banana nanica', 120, 'G', 110],
+              ['Pasta de amendoim', 30, 'G', 176],
+            ],
+          },
+          {
+            name: 'Almoço',
+            time: '12:00',
+            foods: [
+              ['Arroz branco cozido', 250, 'G', 320],
+              ['Feijão preto cozido', 150, 'G', 116],
+              ['Contrafilé grelhado', 180, 'G', 500],
+            ],
+          },
+          {
+            name: 'Lanche',
+            time: '16:00',
+            foods: [
+              ['Sanduíche de frango', 200, 'G', 420],
+              ['Suco de laranja', 0.3, 'L', 135],
+            ],
+          },
+          {
+            name: 'Jantar',
+            time: '20:30',
+            foods: [
+              ['Macarrão cozido', 200, 'G', 204],
+              ['Carne moída refogada', 150, 'G', 318],
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     email: 'camila.demo@forma.dev',
@@ -547,6 +760,62 @@ const DEMO_USERS: DemoUser[] = [
       },
     ],
     measurements: { weightKg: [70, 66], waistCm: [80, 75], chestCm: [94, 92], heightCm: 168 },
+    // Nenhuma ativa: mostra o estado "Nenhuma dieta ativa" do dashboard
+    diets: [
+      {
+        name: 'Reeducação alimentar',
+        goal: 'Comer melhor sem passar fome',
+        meals: [
+          {
+            name: 'Café da manhã',
+            time: '06:30',
+            foods: [
+              ['Pão integral', 50, 'G', 127],
+              ['Requeijão light', 20, 'G', 37],
+              ['Café com leite desnatado', 200, 'ML', 72],
+            ],
+          },
+          {
+            name: 'Lanche da manhã',
+            time: '09:30',
+            foods: [
+              ['Maçã', 130, 'G', 73],
+              ['Castanha de caju', 15, 'G', 85],
+            ],
+          },
+          {
+            name: 'Almoço',
+            time: '12:00',
+            foods: [
+              ['Arroz integral cozido', 150, 'G', 186],
+              ['Lentilha cozida', 100, 'G', 93],
+              ['Filé de frango grelhado', 100, 'G', 159],
+              ['Legumes no vapor', 150, 'G', 45],
+              ['Azeite de oliva', 5, 'ML', 41],
+            ],
+          },
+          {
+            name: 'Lanche',
+            time: '16:00',
+            foods: [
+              ['Iogurte natural', 170, 'G', 87],
+              ['Morango', 100, 'G', 30],
+              ['Banana prata', 80, 'G', 78],
+            ],
+          },
+          {
+            name: 'Jantar',
+            time: '20:30',
+            foods: [
+              ['Sopa de legumes com frango', 350, 'ML', 210],
+              ['Torrada integral', 20, 'G', 75],
+            ],
+          },
+          // Refeicao ainda sem alimentos: o editor permite salvar assim
+          { name: 'Ceia', time: '22:00', foods: [] },
+        ],
+      },
+    ],
   },
 ];
 
@@ -810,7 +1079,38 @@ async function seedUser(user: DemoUser, passwordHash: string, today: string): Pr
     },
   });
 
-  return `${user.displayName.padEnd(13)} ${user.email.padEnd(22)} ${String(user.weeks)} semanas · ${String(sessions)} sessoes · ${String(activities)} atividades · ${String(rows.length)} medidas`;
+  /* eslint-disable no-restricted-syntax, no-await-in-loop */
+  for (const diet of user.diets) {
+    await prisma.diet.create({
+      data: {
+        userId: created.id,
+        name: diet.name,
+        goal: diet.goal,
+        isActive: diet.active ?? false,
+        meals: {
+          create: diet.meals.map((meal, mealIndex) => ({
+            name: meal.name,
+            time: meal.time,
+            sortOrder: mealIndex,
+            foods: {
+              create: meal.foods.map(([name, quantity, unit, kcal], foodIndex) => ({
+                name,
+                quantity,
+                unit,
+                kcal,
+                sortOrder: foodIndex,
+              })),
+            },
+          })),
+        },
+      },
+    });
+  }
+  /* eslint-enable no-restricted-syntax, no-await-in-loop */
+
+  const activeDiet = user.diets.find((diet) => diet.active)?.name ?? 'nenhuma ativa';
+
+  return `${user.displayName.padEnd(13)} ${user.email.padEnd(22)} ${String(user.weeks)} semanas · ${String(sessions)} sessoes · ${String(activities)} atividades · ${String(rows.length)} medidas · ${String(user.diets.length)} dietas (${activeDiet})`;
 }
 
 async function main(): Promise<void> {

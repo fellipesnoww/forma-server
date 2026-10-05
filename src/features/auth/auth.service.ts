@@ -1,6 +1,7 @@
 import * as argon2 from 'argon2';
 import { jwtVerify, SignJWT } from 'jose';
 
+import { getActiveDietSummary, type DietSummary } from '../diets/index.js';
 import { env } from '../../config/env.js';
 import type { Role } from '../../shared/auth/index.js';
 import { AppError } from '../../shared/errors/index.js';
@@ -23,6 +24,7 @@ export interface AuthUserDto {
   email: string;
   role: Role;
   status: 'active' | 'inactive' | 'banned';
+  createdAt: string;
 }
 
 export interface ProfileDto {
@@ -92,7 +94,13 @@ async function verifyRefreshToken(token: string): Promise<RefreshClaims> {
 }
 
 function toUserDto(user: UserWithProfile): AuthUserDto {
-  return { id: user.id, email: user.email, role: user.role, status: user.status };
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    createdAt: user.createdAt.toISOString(),
+  };
 }
 
 function toProfileDto(user: UserWithProfile): ProfileDto {
@@ -210,12 +218,21 @@ export async function logout(userId: string): Promise<void> {
   await incrementTokenVersion(userId);
 }
 
-export async function getMe(userId: string): Promise<{ user: AuthUserDto; profile: ProfileDto }> {
-  const user = await findUserById(userId);
+/**
+ * Dados de boot do app. Inclui a dieta ativa (dashboard "Dieta ativa / proxima refeicao")
+ * para o client nao precisar de uma segunda chamada; os endpoints de login nao a trazem.
+ */
+export async function getMe(
+  userId: string,
+): Promise<{ user: AuthUserDto; profile: ProfileDto; activeDiet: DietSummary | null }> {
+  const [user, activeDiet] = await Promise.all([
+    findUserById(userId),
+    getActiveDietSummary(userId),
+  ]);
 
   if (!user) {
     throw AppError.unauthorized();
   }
 
-  return { user: toUserDto(user), profile: toProfileDto(user) };
+  return { user: toUserDto(user), profile: toProfileDto(user), activeDiet };
 }

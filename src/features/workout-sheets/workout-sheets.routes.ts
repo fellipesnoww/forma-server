@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import {
   addSheet,
+  duplicateSheet,
   editSheet,
   getSheetDetail,
   getSheets,
@@ -11,6 +12,7 @@ import {
 } from './workout-sheets.service.js';
 import {
   createWorkoutSheetBodySchema,
+  duplicateWorkoutSheetBodySchema,
   errorResponseSchema,
   reorderExercisesBodySchema,
   sheetDetailResponseSchema,
@@ -129,6 +131,33 @@ export const workoutSheetsRoutes: FastifyPluginAsyncZod = async (app) => {
       await removeSheet(request.user.sub, request.params.id);
 
       return reply.status(204).send();
+    },
+  );
+
+  app.post(
+    '/:id/duplicate',
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        tags: ['Planilhas'],
+        summary: 'Duplica a planilha com dias e exercicios',
+        description:
+          'Cria uma planilha nova copiando dias, ordem, metas e descanso padrao. Body opcional.',
+        security: [{ bearerAuth: [] }],
+        params: sheetIdParamsSchema,
+        body: duplicateWorkoutSheetBodySchema,
+        response: {
+          201: sheetDetailResponseSchema,
+          400: errorResponseSchema,
+          401: errorResponseSchema,
+          404: errorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const sheet = await duplicateSheet(request.user.sub, request.params.id, request.body);
+
+      return reply.status(201).send(sheet);
     },
   );
 

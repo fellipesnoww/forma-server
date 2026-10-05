@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   addCustomExercise,
   editCustomExercise,
+  getLastSession,
   listExercises,
   removeCustomExercise,
 } from './exercises.service.js';
@@ -13,6 +14,8 @@ import {
   exerciseIdParamsSchema,
   exerciseListResponseSchema,
   exerciseResponseSchema,
+  lastSessionQuerySchema,
+  lastSessionResponseSchema,
   listExercisesQuerySchema,
   updateCustomExerciseBodySchema,
 } from './exercises.schemas.js';
@@ -37,6 +40,33 @@ export const exercisesRoutes: FastifyPluginAsyncZod = async (app) => {
       });
 
       return reply.status(200).send({ items });
+    },
+  );
+
+  app.get(
+    '/:id/last-session',
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        tags: ['Exercicios'],
+        summary: 'Series da ultima sessao com o exercicio (sugestao de carga)',
+        description:
+          'Aceita id do catalogo ou de exercicio personalizado do usuario. Sem historico, lastSession = null.',
+        security: [{ bearerAuth: [] }],
+        params: exerciseIdParamsSchema,
+        querystring: lastSessionQuerySchema,
+        response: {
+          200: lastSessionResponseSchema,
+          400: errorResponseSchema,
+          401: errorResponseSchema,
+          404: errorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const result = await getLastSession(request.user.sub, request.params.id, request.query);
+
+      return reply.status(200).send(result);
     },
   );
 

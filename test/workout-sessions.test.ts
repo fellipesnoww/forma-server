@@ -27,6 +27,9 @@ interface SessionDetail {
   sheetName: string;
   performedAt: string;
   completedAt: string | null;
+  durationMinutes: number | null;
+  exerciseCount: number;
+  setCount: number;
   photoUrl: string | null;
   comment: string | null;
   exercises: {
@@ -422,6 +425,107 @@ describe('complete', () => {
     const completed = (await complete(session.id)).json<SessionDetail>();
 
     assert.equal(completed.performedAt, '2025-05-01T12:00:00.000Z');
+  });
+});
+
+describe('duracao', () => {
+  function complete(id: string) {
+    return ctx.request(user, { method: 'POST', url: `/workout-sessions/${id}/complete` });
+  }
+
+  it('registro retroativo informa a duracao no POST', async () => {
+    const session = await createSession({
+      performedAt: '2025-03-10T21:30:00.000Z',
+      durationMinutes: 55,
+    });
+
+    assert.equal(session.durationMinutes, 55);
+  });
+
+  it('omitida fica null ate o complete', async () => {
+    const session = await createSession();
+
+    assert.equal(session.durationMinutes, null);
+  });
+
+  it('complete de sessao ao vivo calcula a partir de performedAt', async () => {
+    const startedAt = new Date(Date.now() - 52 * MINUTE_MS).toISOString();
+    const session = await createSession({ performedAt: startedAt });
+    const completed = (await complete(session.id)).json<SessionDetail>();
+
+    assert.equal(completed.durationMinutes, 52);
+  });
+
+  it('complete logo apos iniciar arredonda para no minimo 1 minuto', async () => {
+    const session = await createSession();
+    const completed = (await complete(session.id)).json<SessionDetail>();
+
+    assert.equal(completed.durationMinutes, 1);
+  });
+
+  it('complete nao inventa duracao para registro retroativo de dias atras', async () => {
+    const session = await createSession({ performedAt: '2025-03-10T21:30:00.000Z' });
+    const completed = (await complete(session.id)).json<SessionDetail>();
+
+    assert.ok(completed.completedAt);
+    assert.equal(completed.durationMinutes, null);
+  });
+
+  it('complete preserva a duracao informada pelo client', async () => {
+    const startedAt = new Date(Date.now() - 90 * MINUTE_MS).toISOString();
+    const session = await createSession({ performedAt: startedAt, durationMinutes: 40 });
+    const completed = (await complete(session.id)).json<SessionDetail>();
+
+    assert.equal(completed.durationMinutes, 40);
+  });
+
+  it('PATCH altera e null remove a duracao', async () => {
+    const session = await createSession({ durationMinutes: 30 });
+    const changed = await patchSession(session.id, { durationMinutes: 45 });
+    const cleared = await patchSession(session.id, { durationMinutes: null });
+
+    assert.equal(changed.json<SessionDetail>().durationMinutes, 45);
+    assert.equal(cleared.json<SessionDetail>().durationMinutes, null);
+  });
+
+  const invalid: [string, unknown][] = [
+    ['zero', 0],
+    ['acima de 24h', 1441],
+    ['fracionada', 1.5],
+    ['texto', '55'],
+  ];
+
+  invalid.forEach(([label, durationMinutes]) => {
+    it(`duracao ${label} -> 400`, async () => {
+      assertValidationError(
+        await postSession({ sheetId, durationMinutes, exercises: [exercise([oneSet()])] }),
+      );
+    });
+  });
+});
+
+describe('contagens do resumo', () => {
+  it('exerciseCount e setCount no detalhe e na listagem', async () => {
+    const session = await createSession({
+      performedAt: '2024-01-15T10:00:00.000Z',
+      exercises: [
+        exercise([oneSet(), oneSet({ setNumber: 2 }), oneSet({ setNumber: 3 })]),
+        exercise([oneSet()], { exerciseId: catalogId }, 1),
+      ],
+    });
+    const list = await ctx.request(user, {
+      method: 'GET',
+      url: '/workout-sessions?from=2024-01-15T00:00:00Z&to=2024-01-15T23:59:59Z',
+    });
+    const item = list
+      .json<{ items: SessionDetail[] }>()
+      .items.find((candidate) => candidate.id === session.id);
+
+    assert.equal(session.exerciseCount, 2);
+    assert.equal(session.setCount, 4);
+    assert.equal(item?.exerciseCount, 2);
+    assert.equal(item.setCount, 4);
+    assert.equal('exercises' in item, false, 'listagem continua sem series');
   });
 });
 

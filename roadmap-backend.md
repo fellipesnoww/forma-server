@@ -858,21 +858,21 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 #### Endpoints
 
-- [ ] `GET /exercises/:id/last-session` — última carga/reps (sugestão)
-- [ ] `POST /workout-sheets/:id/duplicate` — clona planilha + dias + exercícios
+- [x] `GET /exercises/:id/last-session` — última carga/reps (sugestão)
+- [x] `POST /workout-sheets/:id/duplicate` — clona planilha + dias + exercícios
 
 #### Opcional
 
-- [ ] Campo `default_rest_seconds` em `sheet_exercises` (suporte a cronômetro no client)
+- [x] Campo `default_rest_seconds` em `sheet_exercises` (suporte a cronômetro no client)
 
 #### Qualidade
 
-- [ ] Documentação OpenAPI (tag `Planilhas`/`Exercicios`, conforme rota)
-- [ ] Testes automatizados cobrindo as regras de negócio da feature
+- [x] Documentação OpenAPI (tag `Planilhas`/`Exercicios`, conforme rota)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
 
 #### SDD
 
-- [ ] `sdd/5.1-qualidade-vida-treino.md` — documentar implementação
+- [x] `sdd/5.1-qualidade-vida-treino.md` — documentar implementação
 
 ### 5.2 Notificações push
 
@@ -905,11 +905,46 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [ ] `sdd/5.2-notificacoes-push.md` — documentar implementação
 
-### 5.3 Entrega Fase 5
+### 5.3 Dietas (nutrição)
+
+#### Feature package
+
+- [x] Criar `features/diets/` (`index.ts`, routes, service, repository, schemas)
+- [x] Subpasta `calorie-estimator/` com provedores de IA (Claude e Gemini), escolhidos por env
+
+#### Modelagem
+
+- [x] Migration: tabelas `diets`, `diet_meals` (nome + horário `HH:mm`), `diet_foods` (nome, quantidade, unidade, kcal)
+- [x] Enum `food_unit` (`G`, `KG`, `ML`, `L`)
+
+#### Endpoints
+
+- [x] `GET /diets` — dietas do usuário com total calórico aproximado e indicador de ativa
+- [x] `POST /diets` — cria dieta com refeições e alimentos
+- [x] `GET /diets/:id` — detalhe com totais por refeição e do dia
+- [x] `PATCH /diets/:id` — nome/objetivo e substituição de refeições
+- [x] `DELETE /diets/:id` — remoção
+- [x] `POST /diets/:id/activate` / `POST /diets/:id/deactivate` — no máximo uma dieta ativa
+- [x] `POST /diets/calorie-estimate` — botão "IA": estima kcal pelo nome + quantidade
+- [x] Dieta ativa em `GET /auth/me` (`activeDiet`)
+
+#### Regras de negócio
+
+- [x] Total aproximado = soma das kcal dos alimentos (por refeição e por dieta), calculado na leitura
+- [x] Uma dieta ativa por usuário (troca serializada por lock na linha do usuário)
+- [x] IA desligada sem chave (`503`); falha do provedor não derruba o resto da feature
+- [x] Documentação OpenAPI (tag `Dietas`)
+- [x] Testes automatizados cobrindo as regras de negócio da feature
+
+#### SDD
+
+- [x] `sdd/5.3-dietas.md` — documentar implementação
+
+### 5.4 Entrega Fase 5
 
 - [ ] Testes: preferências respeitadas (usuário opt-out não recebe push)
-- [ ] Testes: duplicar planilha preserva ordem e defaults
-- [ ] Atualizar `sdd/README.md` com links das etapas 5.1–5.2
+- [x] Testes: duplicar planilha preserva ordem e defaults
+- [ ] Atualizar `sdd/README.md` com links das etapas 5.1–5.3
 
 ---
 
@@ -1010,7 +1045,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 9. [x] **2.4** — Progress endpoints
 10. [x] **Fase 3** — Admin: exercises, users, audit, achievements, challenges
 11. [ ] **Fase 4** — Achievements, challenges, streaks
-12. [ ] **Fase 5** — Push + preferences
+12. [ ] **Fase 5** — Push + preferences (5.1 e 5.3 Dietas entregues)
 13. [ ] **Fase 6** — Export + sync + health
 
 ---
@@ -1024,7 +1059,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 | 2 | Atividades, calendário, progressão | 🔴 Crítica | 4–6 semanas |
 | 3 | Admin completo + auditoria | 🟠 Alta | 3–4 semanas |
 | 4 | Gamificação, streaks, notificações in-app | 🟠 Alta | 3–4 semanas |
-| 5 | Push, duplicar planilha, sugestão de carga | 🟡 Média | 3–5 semanas |
+| 5 | Push, duplicar planilha, sugestão de carga, dietas | 🟡 Média | 3–5 semanas |
 | 6 | Export, health sync, offline sync | 🟢 Futura | 4–6 semanas |
 
 ---

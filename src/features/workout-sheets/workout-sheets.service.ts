@@ -16,6 +16,7 @@ import {
 } from './workout-sheets.repository.js';
 import type {
   CreateWorkoutSheetBody,
+  DuplicateWorkoutSheetBody,
   ReorderExercisesBody,
   UpdateWorkoutSheetBody,
 } from './workout-sheets.schemas.js';
@@ -28,6 +29,7 @@ export interface SheetExerciseDto {
   sortOrder: number;
   targetSets: number | null;
   targetReps: number | null;
+  defaultRestSeconds: number | null;
 }
 
 export interface SheetDayDto {
@@ -76,6 +78,7 @@ function toDetailDto(sheet: SheetDetailRow): SheetDetailDto {
         sortOrder: exercise.sortOrder,
         targetSets: exercise.targetSets,
         targetReps: exercise.targetReps,
+        defaultRestSeconds: exercise.defaultRestSeconds,
       })),
     })),
   };
@@ -148,6 +151,44 @@ export async function editSheet(
   }
 
   return toDetailDto(await replaceSheet(id, input));
+}
+
+const SHEET_NAME_MAX = 120;
+const COPY_SUFFIX = ' (copia)';
+
+/** Corta o nome original para o sufixo caber no limite da coluna. */
+function copyName(original: string): string {
+  return `${original.slice(0, SHEET_NAME_MAX - COPY_SUFFIX.length)}${COPY_SUFFIX}`;
+}
+
+/**
+ * Clona nome, dias e exercicios (ordem, metas e descanso) numa planilha nova e independente.
+ * As referencias sao copiadas como estao, sem `validateExerciseReferences`: um exercicio
+ * desativado ou custom removido depois da criacao ja esta na planilha original, e recusar a
+ * copia por isso surpreenderia mais do que copiar fielmente.
+ */
+export async function duplicateSheet(
+  userId: string,
+  id: string,
+  input: DuplicateWorkoutSheetBody,
+): Promise<SheetDetailDto> {
+  const source = await requireSheetDetail(userId, id);
+  const days: SheetDayInput[] = source.days.map((day) => ({
+    weekday: day.weekday,
+    order: day.order,
+    exercises: day.exercises.map((exercise) => ({
+      exerciseId: exercise.exerciseId ?? undefined,
+      customExerciseId: exercise.customExerciseId ?? undefined,
+      sortOrder: exercise.sortOrder,
+      targetSets: exercise.targetSets ?? undefined,
+      targetReps: exercise.targetReps ?? undefined,
+      defaultRestSeconds: exercise.defaultRestSeconds ?? undefined,
+    })),
+  }));
+
+  return toDetailDto(
+    await createSheet(userId, { name: input?.name ?? copyName(source.name), days }),
+  );
 }
 
 export async function removeSheet(userId: string, id: string): Promise<void> {

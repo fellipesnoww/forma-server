@@ -11,6 +11,7 @@ export const ERROR_CODES = {
   PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
   UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
   RATE_LIMITED: 'RATE_LIMITED',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 } as const;
 
@@ -70,6 +71,11 @@ export class AppError extends Error {
 
   static tooManyRequests(message = 'Muitas requisicoes', details?: ErrorDetails): AppError {
     return new AppError(429, ERROR_CODES.RATE_LIMITED, message, details);
+  }
+
+  /** Dependencia externa indisponivel ou nao configurada (ex.: provedor de IA). */
+  static serviceUnavailable(message: string, details?: ErrorDetails): AppError {
+    return new AppError(503, ERROR_CODES.SERVICE_UNAVAILABLE, message, details);
   }
 
   static internal(message = 'Erro interno do servidor', details?: ErrorDetails): AppError {
