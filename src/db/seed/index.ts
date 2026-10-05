@@ -5,6 +5,7 @@
  */
 import { prisma } from '../../shared/db/client.js';
 import { seedActivityTypes } from './activity-types.seed.js';
+import { seedAdminUser, seedSuperUser } from './privileged-users.seed.js';
 import { seedExercises } from './exercises.seed.js';
 
 interface Seeder {
@@ -15,6 +16,8 @@ interface Seeder {
 const seeders: Seeder[] = [
   { name: 'grupos musculares + exercicios (1.3)', run: seedExercises },
   { name: 'tipos de atividade livre (2.1)', run: seedActivityTypes },
+  { name: 'super usuario', run: seedSuperUser },
+  { name: 'usuario administrador', run: seedAdminUser },
 ];
 
 async function main(): Promise<void> {
