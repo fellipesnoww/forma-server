@@ -1,4 +1,4 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 
 import { env } from '../../config/env.js';
 import { AppError } from '../../shared/errors/index.js';
@@ -6,6 +6,13 @@ import { AppError } from '../../shared/errors/index.js';
 export interface VerifiedOAuthIdentity {
   subject: string;
   email: string;
+  /** Google manda `name`/`picture` com o escopo `profile`; Apple nunca manda no token. */
+  name: string | null;
+  picture: string | null;
+}
+
+function optionalClaim(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
 const GOOGLE_JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
@@ -20,19 +27,43 @@ function normalizeEmailVerified(value: unknown): boolean {
   return value === true || value === 'true';
 }
 
+/**
+ * Monta a causa interna da falha (vai so para o log, nunca para a resposta): motivo do
+ * `jose` + claims nao sensiveis, para diagnosticar `aud` errado, token expirado ou
+ * access token enviado no lugar do id token.
+ */
+function describeVerifyFailure(token: string, audience: string[], error: unknown): Error {
+  const reason = error instanceof Error ? error.message : String(error);
+  let claims: Record<string, unknown> = { decodable: false };
+
+  try {
+    const { aud, azp, iss, exp } = decodeJwt(token);
+    claims = { aud, azp, iss, exp, expired: typeof exp === 'number' && exp * 1000 < Date.now() };
+  } catch {
+    // Nao e JWT (provavelmente access token em vez de id token).
+  }
+
+  return new Error(
+    `OAuth verify failed: ${reason} | claims=${JSON.stringify(claims)} | expectedAud=${JSON.stringify(audience)}`,
+    { cause: error },
+  );
+}
+
 async function verifyIdToken(
   token: string,
   jwks: ReturnType<typeof createRemoteJWKSet>,
   issuers: string[],
-  audience: string,
+  audience: string[],
   invalidMessage: string,
 ): Promise<VerifiedOAuthIdentity> {
   let payload;
 
   try {
     ({ payload } = await jwtVerify(token, jwks, { issuer: issuers, audience }));
-  } catch {
-    throw AppError.unauthorized(invalidMessage);
+  } catch (error) {
+    const appError = AppError.unauthorized(invalidMessage);
+    appError.cause = describeVerifyFailure(token, audience, error);
+    throw appError;
   }
 
   const email = typeof payload.email === 'string' ? payload.email : null;
@@ -41,7 +72,12 @@ async function verifyIdToken(
     throw AppError.unauthorized(invalidMessage);
   }
 
-  return { subject: payload.sub, email };
+  return {
+    subject: payload.sub,
+    email,
+    name: optionalClaim(payload.name)?.slice(0, 120) ?? null,
+    picture: optionalClaim(payload.picture),
+  };
 }
 
 export function verifyGoogleIdToken(idToken: string): Promise<VerifiedOAuthIdentity> {

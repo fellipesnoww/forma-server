@@ -20,6 +20,19 @@ function csvList(fallback: string) {
     .pipe(z.array(z.string()).min(1));
 }
 
+/** Lista separada por virgula preservando maiusculas (client ids, bundle ids). */
+function idList() {
+  return z
+    .string()
+    .transform((value) =>
+      value
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0),
+    )
+    .pipe(z.array(z.string()).min(1));
+}
+
 /** Variavel opcional em que string vazia (comum no .env) conta como ausente. */
 function optionalString() {
   return z.preprocess((value) => (value === '' ? undefined : value), z.string().min(1).optional());
@@ -40,9 +53,10 @@ const envSchema = z
     JWT_ACCESS_TTL: z.string().min(1).default('15m'),
     JWT_REFRESH_TTL: z.string().min(1).default('30d'),
 
-    // OAuth (Fase 1.1): usados como `aud` ao verificar o id/identity token do provedor
-    GOOGLE_CLIENT_ID: z.string().min(1),
-    APPLE_CLIENT_ID: z.string().min(1),
+    // OAuth (Fase 1.1): usados como `aud` ao verificar o id/identity token do provedor.
+    // Aceitam lista separada por virgula (ex.: client web + iOS + Android).
+    GOOGLE_CLIENT_ID: idList(),
+    APPLE_CLIENT_ID: idList(),
 
     // Midia: Fase 0 grava o binario no proprio Postgres (bytea), sem S3/R2
     MEDIA_MAX_SIZE_MB: z.coerce.number().positive().default(5),

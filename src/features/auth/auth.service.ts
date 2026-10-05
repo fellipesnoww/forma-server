@@ -7,6 +7,7 @@ import type { Role } from '../../shared/auth/index.js';
 import { AppError } from '../../shared/errors/index.js';
 import {
   createUserWithProfile,
+  fillMissingProfileFields,
   findUserByEmail,
   findUserById,
   findUserByOAuth,
@@ -188,7 +189,20 @@ export async function loginOrLinkOAuth(
           email,
           oauthProvider: provider,
           oauthSubject: identity.subject,
+          displayName: identity.name,
+          avatarUrl: identity.picture,
         });
+  }
+
+  // Contas criadas antes (ou via /auth/register) podem estar sem nome/foto: completa com o
+  // que o provedor mandou, sem tocar no que ja foi preenchido.
+  const missing = {
+    ...(!user.profile?.displayName && identity.name ? { displayName: identity.name } : {}),
+    ...(!user.profile?.avatarUrl && identity.picture ? { avatarUrl: identity.picture } : {}),
+  };
+
+  if (user.profile && Object.keys(missing).length > 0) {
+    user = await fillMissingProfileFields(user.id, missing);
   }
 
   assertActive(user);

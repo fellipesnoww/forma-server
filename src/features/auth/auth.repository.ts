@@ -34,6 +34,7 @@ export function createUserWithProfile(data: {
   oauthSubject?: string | null;
   role?: PrismaRole;
   displayName?: string | null;
+  avatarUrl?: string | null;
 }): Promise<UserWithProfile> {
   // Nested write: uma unica instrucao Prisma, atomica por natureza (sem precisar de $transaction).
   return prisma.user.create({
@@ -43,8 +44,22 @@ export function createUserWithProfile(data: {
       oauthProvider: data.oauthProvider ?? null,
       oauthSubject: data.oauthSubject ?? null,
       role: data.role ?? 'user',
-      profile: { create: { displayName: data.displayName ?? null } },
+      profile: {
+        create: { displayName: data.displayName ?? null, avatarUrl: data.avatarUrl ?? null },
+      },
     },
+    include: WITH_PROFILE,
+  });
+}
+
+/** Preenche so os campos ainda vazios: nunca sobrescreve o que o usuario editou. */
+export function fillMissingProfileFields(
+  userId: string,
+  data: { displayName?: string; avatarUrl?: string },
+): Promise<UserWithProfile> {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { profile: { update: data } },
     include: WITH_PROFILE,
   });
 }
