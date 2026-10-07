@@ -28,6 +28,7 @@ export const createAdminExerciseBodySchema = z.object({
   muscleGroupSlug: z.string().min(1).optional(),
   isActive: z.boolean().default(true),
   media: mediaUploadSchema.optional(),
+  femaleMedia: mediaUploadSchema.optional().describe('Variante da midia com executora feminina'),
 });
 
 export const updateAdminExerciseBodySchema = z
@@ -36,6 +37,10 @@ export const updateAdminExerciseBodySchema = z
     muscleGroupSlug: z.string().min(1).nullable().optional().describe('null remove o grupo'),
     media: mediaUploadSchema.optional().describe('Substitui a imagem/video do exercicio'),
     mediaUrl: z.null().optional().describe('Somente null (remove a midia)'),
+    femaleMedia: mediaUploadSchema
+      .optional()
+      .describe('Substitui a variante feminina da imagem/video'),
+    femaleMediaUrl: z.null().optional().describe('Somente null (remove a midia feminina)'),
   })
   .refine((data) => Object.values(data).some((value) => value !== undefined), {
     message: 'Envie ao menos um campo',
@@ -43,6 +48,10 @@ export const updateAdminExerciseBodySchema = z
   .refine((data) => !(data.media && data.mediaUrl === null), {
     message: 'Envie media OU mediaUrl: null, nao ambos',
     path: ['mediaUrl'],
+  })
+  .refine((data) => !(data.femaleMedia && data.femaleMediaUrl === null), {
+    message: 'Envie femaleMedia OU femaleMediaUrl: null, nao ambos',
+    path: ['femaleMediaUrl'],
   });
 
 export const updateExerciseStatusBodySchema = z.object({ isActive: z.boolean() });
@@ -55,6 +64,7 @@ export const adminExerciseResponseSchema = z.object({
   muscleGroup: muscleGroupRefSchema.nullable(),
   isActive: z.boolean(),
   mediaUrl: z.string().nullable(),
+  femaleMediaUrl: z.string().nullable(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });

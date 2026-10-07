@@ -1,5 +1,5 @@
 import { prisma } from '../../shared/db/client.js';
-import type { Prisma } from '../../generated/prisma/client.js';
+import type { ExerciseReport, Prisma } from '../../generated/prisma/client.js';
 
 export type CatalogExerciseRow = Prisma.ExerciseGetPayload<{ include: { muscleGroup: true } }>;
 export type CustomExerciseRow = Prisma.CustomExerciseGetPayload<{
@@ -141,4 +141,12 @@ export function findLastSessionExercise(
     ],
     include: lastSessionExerciseInclude,
   });
+}
+
+export function insertExerciseReport(data: {
+  userId: string;
+  exerciseId: string;
+  text: string;
+}): Promise<ExerciseReport> {
+  return prisma.exerciseReport.create({ data });
 }

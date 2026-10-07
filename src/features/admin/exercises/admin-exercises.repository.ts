@@ -64,7 +64,13 @@ export function findExerciseNamed(
 
 export function createExercise(
   db: TransactionClient,
-  data: { name: string; muscleGroupId: string | null; isActive: boolean; mediaUrl: string | null },
+  data: {
+    name: string;
+    muscleGroupId: string | null;
+    isActive: boolean;
+    mediaUrl: string | null;
+    femaleMediaUrl: string | null;
+  },
 ): Promise<AdminExerciseRow> {
   return db.exercise.create({ data, include: { muscleGroup: true } });
 }
@@ -77,6 +83,7 @@ export function updateExercise(
     muscleGroupId?: string | null;
     isActive?: boolean;
     mediaUrl?: string | null;
+    femaleMediaUrl?: string | null;
   },
 ): Promise<AdminExerciseRow> {
   return db.exercise.update({ where: { id }, data, include: { muscleGroup: true } });

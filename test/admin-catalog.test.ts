@@ -18,6 +18,7 @@ interface AdminExercise {
   muscleGroup: { id: string; slug: string; name: string } | null;
   isActive: boolean;
   mediaUrl: string | null;
+  femaleMediaUrl: string | null;
 }
 
 interface MuscleGroup {
@@ -41,7 +42,9 @@ before(async () => {
 
 after(async () => {
   const exercises = await prisma.exercise.findMany({ where: { name: { startsWith: TAG } } });
-  const mediaIds = exercises.flatMap((e) => (e.mediaUrl ? [mediaIdFromUrl(e.mediaUrl)] : []));
+  const mediaIds = exercises.flatMap((e) =>
+    [e.mediaUrl, e.femaleMediaUrl].flatMap((url) => (url ? [mediaIdFromUrl(url)] : [])),
+  );
   const exerciseIds = exercises.map((e) => e.id);
 
   await prisma.adminAuditLog.deleteMany({ where: { actorId: admin.id } });
@@ -162,6 +165,27 @@ describe('POST /admin/exercises', () => {
     assert.equal(log?.actorId, admin.id);
   });
 
+  it('femaleMedia grava femaleMediaUrl separado de mediaUrl', async () => {
+    const response = await createExercise({
+      name: `${TAG} Agachamento feminino`,
+      media: { data: PNG_1X1_BASE64, mimeType: 'image/png' },
+      femaleMedia: { data: PNG_1X1_BASE64, mimeType: 'image/png' },
+    });
+    const exercise = response.json<AdminExercise>();
+
+    assert.equal(response.statusCode, 201);
+    assert.ok(exercise.mediaUrl);
+    assert.ok(exercise.femaleMediaUrl);
+    assert.notEqual(exercise.femaleMediaUrl, exercise.mediaUrl);
+
+    const catalog = await ctx.request(user, {
+      method: 'GET',
+      url: `/exercises?q=${encodeURIComponent(`${TAG} Agachamento feminino`)}`,
+    });
+    const [item] = catalog.json<{ items: AdminExercise[] }>().items;
+    assert.equal(item?.femaleMediaUrl, exercise.femaleMediaUrl);
+  });
+
   it('aparece no catalogo do usuario (GET /exercises)', async () => {
     const created = (await createExercise({ name: `${TAG} Remada visivel` })).json<AdminExercise>();
     const catalog = await ctx.request(user, {
@@ -275,26 +299,28 @@ describe('PATCH /admin/exercises/:id', () => {
     assert.equal(metadata.after.name, `${TAG} Rosca nova`);
   });
 
-  it('muscleGroupSlug null remove o grupo; mediaUrl null remove a midia', async () => {
+  it('muscleGroupSlug null remove o grupo; mediaUrl/femaleMediaUrl null removem as midias', async () => {
     const created = (
       await createExercise({
         name: `${TAG} Com midia`,
         muscleGroupSlug: 'ombros',
         media: { data: PNG_1X1_BASE64, mimeType: 'image/png' },
+        femaleMedia: { data: PNG_1X1_BASE64, mimeType: 'image/png' },
       })
     ).json<AdminExercise>();
 
     const response = await ctx.request(admin, {
       method: 'PATCH',
       url: `/admin/exercises/${created.id}`,
-      payload: { muscleGroupSlug: null, mediaUrl: null },
+      payload: { muscleGroupSlug: null, mediaUrl: null, femaleMediaUrl: null },
     });
 
     assert.equal(response.json<AdminExercise>().muscleGroup, null);
     assert.equal(response.json<AdminExercise>().mediaUrl, null);
+    assert.equal(response.json<AdminExercise>().femaleMediaUrl, null);
   });
 
-  it('media + mediaUrl null juntos -> 400; vazio -> 400; nome de outro -> 409; inexistente -> 404', async () => {
+  it('media + mediaUrl null (ou femaleMedia + femaleMediaUrl null) juntos -> 400; vazio -> 400; nome de outro -> 409; inexistente -> 404', async () => {
     const a = (await createExercise({ name: `${TAG} Patch A` })).json<AdminExercise>();
     await createExercise({ name: `${TAG} Patch B` });
 
@@ -306,6 +332,15 @@ describe('PATCH /admin/exercises/:id', () => {
         await patch(a.id, {
           media: { data: PNG_1X1_BASE64, mimeType: 'image/png' },
           mediaUrl: null,
+        })
+      ).statusCode,
+      400,
+    );
+    assert.equal(
+      (
+        await patch(a.id, {
+          femaleMedia: { data: PNG_1X1_BASE64, mimeType: 'image/png' },
+          femaleMediaUrl: null,
         })
       ).statusCode,
       400,

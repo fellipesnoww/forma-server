@@ -24,6 +24,7 @@ const URL_COLUMNS = [
   { table: 'workout_sessions', column: 'photo_url' },
   { table: 'free_activities', column: 'photo_url' },
   { table: 'exercises', column: 'media_url' },
+  { table: 'exercises', column: 'female_media_url' },
   { table: 'achievements', column: 'icon_url' },
 ] as const;
 

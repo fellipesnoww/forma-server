@@ -975,7 +975,37 @@ Detalhamento em [`sdd/fase-0-fundacao-tecnica.md`](sdd/fase-0-fundacao-tecnica.m
 
 - [ ] Testes: preferências respeitadas (usuário opt-out não recebe push)
 - [x] Testes: duplicar planilha preserva ordem e defaults
-- [ ] Atualizar `sdd/README.md` com links das etapas 5.1–5.4
+- [ ] Atualizar `sdd/README.md` com links das etapas 5.1–5.4 e 5.6
+
+### 5.6 Reports de exercícios
+
+#### Feature package
+
+- [x] Envio em `features/exercises/` (`POST /exercises/:id/reports`) — o report é sobre um exercício do catálogo
+- [x] Criar `features/admin/exercise-reports/` — leitura no escopo admin (herda os guards de `/admin`)
+
+#### Modelagem
+
+- [x] Migration: tabela `exercise_reports` (`user_id`, `exercise_id` → `exercises`, `text`, `created_at`)
+- [x] Cascade em `user_id` e `exercise_id`; índices `(created_at)` e `(exercise_id, created_at)`
+
+#### Endpoints
+
+- [x] `POST /exercises/:id/reports` — qualquer usuário autenticado (user, admin, super_user) reporta um problema no exercício
+- [x] `GET /admin/exercise-reports` — admin e super_user; paginado, filtros `exerciseId`/`userId`/`from`/`to`
+
+#### Regras de negócio
+
+- [x] Só exercícios do catálogo (inclusive desativados); id de exercício custom ou inexistente → 404
+- [x] `text` obrigatório, 1–2000 caracteres após trim
+- [x] `created_at` definido pelo servidor; vários reports por usuário, sem edição/remoção
+- [x] Leitura exclusiva do painel admin (`user` recebe 403)
+- [x] Documentação OpenAPI (tags `Exercicios` + `Admin`)
+- [x] Testes automatizados (`test/exercise-reports.test.ts`)
+
+#### SDD
+
+- [x] `sdd/5.6-reports-exercicios.md` — documentar implementação
 
 ---
 
@@ -1076,7 +1106,7 @@ Marque na sequência abaixo para minimizar retrabalho:
 9. [x] **2.4** — Progress endpoints
 10. [x] **Fase 3** — Admin: exercises, users, audit, achievements, challenges
 11. [ ] **Fase 4** — Achievements, challenges, streaks
-12. [ ] **Fase 5** — Push + preferences (5.1, 5.3 Dietas e 5.4 Avaliações entregues)
+12. [ ] **Fase 5** — Push + preferences (5.1, 5.3 Dietas, 5.4 Avaliações e 5.6 Reports de exercícios entregues)
 13. [ ] **Fase 6** — Export + sync + health
 
 ---

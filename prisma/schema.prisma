@@ -87,6 +87,7 @@ model User {
   challenges       UserChallenge[]
   diets            Diet[]
   ratings          Rating[]
+  exerciseReports  ExerciseReport[]
 
   @@unique([oauthProvider, oauthSubject])
   @@map("users")
@@ -147,17 +148,20 @@ model MuscleGroup {
 /// Catalogo global de exercicios (Fase 1.3), somente leitura para `user`. Edicao fica para
 /// o painel admin (Fase 3) — aqui so existe leitura e o seed inicial.
 model Exercise {
-  id            String   @id @default(uuid()) @db.Uuid
-  name          String   @db.VarChar(160)
-  muscleGroupId String?  @map("muscle_group_id") @db.Uuid
-  isActive      Boolean  @default(true) @map("is_active")
-  mediaUrl      String?  @map("media_url")
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @db.VarChar(160)
+  muscleGroupId  String?  @map("muscle_group_id") @db.Uuid
+  isActive       Boolean  @default(true) @map("is_active")
+  mediaUrl       String?  @map("media_url")
+  /// Variante da midia com executora feminina; `mediaUrl` segue como a padrao (masculina).
+  femaleMediaUrl String?  @map("female_media_url")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   muscleGroup      MuscleGroup?      @relation(fields: [muscleGroupId], references: [id])
   sheetExercises   SheetExercise[]
   sessionExercises SessionExercise[]
+  reports          ExerciseReport[]
 
   @@unique([name])
   @@index([muscleGroupId])
@@ -529,4 +533,22 @@ model Rating {
   @@index([date])
   @@index([userId, date])
   @@map("ratings")
+}
+
+/// Report de um usuario sobre um exercicio do catalogo (dado errado, midia ruim, nome confuso...).
+/// So insercao pelo app; a leitura e do painel admin (`GET /admin/exercise-reports`). Exercicios
+/// custom ficam de fora: sao do proprio usuario, que ja pode edita-los.
+model ExerciseReport {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  exerciseId String   @map("exercise_id") @db.Uuid
+  text       String   @db.VarChar(2000)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([exerciseId, createdAt])
+  @@map("exercise_reports")
 }

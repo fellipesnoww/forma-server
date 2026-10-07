@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import {
   addCustomExercise,
+  addExerciseReport,
   editCustomExercise,
   getLastSession,
   listExercises,
@@ -10,9 +11,11 @@ import {
 } from './exercises.service.js';
 import {
   createCustomExerciseBodySchema,
+  createExerciseReportBodySchema,
   errorResponseSchema,
   exerciseIdParamsSchema,
   exerciseListResponseSchema,
+  exerciseReportSchema,
   exerciseResponseSchema,
   lastSessionQuerySchema,
   lastSessionResponseSchema,
@@ -68,6 +71,34 @@ export const exercisesRoutes: FastifyPluginAsyncZod = async (app) => {
 
       return reply.status(200).send(result);
     },
+  );
+
+  app.post(
+    '/:id/reports',
+    {
+      onRequest: [app.authenticate],
+      schema: {
+        tags: ['Exercicios'],
+        summary: 'Reporta um problema nos dados de um exercicio do catalogo',
+        description:
+          'Qualquer usuario autenticado. So exercicios do catalogo (inclusive desativados); id ' +
+          'de exercicio personalizado responde 404. A leitura e exclusiva do painel admin ' +
+          '(GET /admin/exercise-reports).',
+        security: [{ bearerAuth: [] }],
+        params: exerciseIdParamsSchema,
+        body: createExerciseReportBodySchema,
+        response: {
+          201: exerciseReportSchema,
+          400: errorResponseSchema,
+          401: errorResponseSchema,
+          404: errorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) =>
+      reply
+        .status(201)
+        .send(await addExerciseReport(request.user.sub, request.params.id, request.body)),
   );
 
   app.post(

@@ -8,6 +8,7 @@ import {
   findCustomExercises,
   findLastSessionExercise,
   findMuscleGroupBySlug,
+  insertExerciseReport,
   softDeleteCustomExercise,
   updateCustomExercise,
   type CatalogExerciseRow,
@@ -15,6 +16,8 @@ import {
 } from './exercises.repository.js';
 import type {
   CreateCustomExerciseBody,
+  CreateExerciseReportBody,
+  ExerciseReportDto,
   LastSessionQuery,
   LastSessionResponse,
   UpdateCustomExerciseBody,
@@ -27,6 +30,7 @@ export interface ExerciseDto {
   source: 'catalog' | 'custom';
   isActive: boolean;
   mediaUrl: string | null;
+  femaleMediaUrl: string | null;
 }
 
 function fromCatalog(exercise: CatalogExerciseRow): ExerciseDto {
@@ -37,6 +41,7 @@ function fromCatalog(exercise: CatalogExerciseRow): ExerciseDto {
     source: 'catalog',
     isActive: exercise.isActive,
     mediaUrl: exercise.mediaUrl,
+    femaleMediaUrl: exercise.femaleMediaUrl,
   };
 }
 
@@ -48,6 +53,7 @@ function fromCustom(exercise: CustomExerciseRow): ExerciseDto {
     source: 'custom',
     isActive: true,
     mediaUrl: null,
+    femaleMediaUrl: null,
   };
 }
 
@@ -198,4 +204,27 @@ export function exerciseRefExists(
   ref: { exerciseId?: string; customExerciseId?: string },
 ): Promise<boolean> {
   return exerciseReferenceExists(userId, ref);
+}
+
+/**
+ * Report so vale para o catalogo (inclusive desativado): exercicio custom e do proprio usuario,
+ * que ja pode corrigi-lo. Id custom ou inexistente -> 404.
+ */
+export async function addExerciseReport(
+  userId: string,
+  exerciseId: string,
+  body: CreateExerciseReportBody,
+): Promise<ExerciseReportDto> {
+  if (!(await findCatalogExerciseById(exerciseId))) {
+    throw AppError.notFound('Exercicio nao encontrado');
+  }
+
+  const row = await insertExerciseReport({ userId, exerciseId, text: body.text });
+
+  return {
+    id: row.id,
+    exerciseId: row.exerciseId,
+    text: row.text,
+    createdAt: row.createdAt.toISOString(),
+  };
 }

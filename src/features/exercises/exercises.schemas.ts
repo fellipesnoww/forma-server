@@ -60,12 +60,31 @@ const exerciseSchema = z.object({
   source: z.enum(['catalog', 'custom']),
   isActive: z.boolean(),
   mediaUrl: z.string().nullable(),
+  femaleMediaUrl: z.string().nullable(),
 });
 
 export const exerciseResponseSchema = exerciseSchema;
 
 export const exerciseListResponseSchema = z.object({
   items: z.array(exerciseSchema),
+});
+
+export const createExerciseReportBodySchema = z.object({
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .max(2000)
+    .describe(
+      'O que esta errado no exercicio (nome, grupo muscular, midia...), ate 2000 caracteres',
+    ),
+});
+
+export const exerciseReportSchema = z.object({
+  id: z.uuid(),
+  exerciseId: z.uuid(),
+  text: z.string(),
+  createdAt: z.iso.datetime().describe('Momento do report (definido pelo servidor)'),
 });
 
 export const errorResponseSchema = z.object({
@@ -81,4 +100,6 @@ export type CreateCustomExerciseBody = z.infer<typeof createCustomExerciseBodySc
 export type UpdateCustomExerciseBody = z.infer<typeof updateCustomExerciseBodySchema>;
 export type LastSessionQuery = z.infer<typeof lastSessionQuerySchema>;
 export type LastSessionResponse = z.infer<typeof lastSessionResponseSchema>;
+export type CreateExerciseReportBody = z.infer<typeof createExerciseReportBodySchema>;
+export type ExerciseReportDto = z.infer<typeof exerciseReportSchema>;
 export type ExerciseIdParams = z.infer<typeof exerciseIdParamsSchema>;

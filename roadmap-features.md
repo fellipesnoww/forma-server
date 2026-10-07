@@ -142,6 +142,11 @@
 - [x] Painel admin lista as avaliações com filtros (plataforma, nota, período, usuário) e nota média
 - [ ] Tela de avaliação no app e no web *(cliente)*
 
+### Reports de exercícios
+- [x] Usuário reporta um problema nos dados de um exercício do catálogo (nome, grupo muscular, mídia...) com um texto livre
+- [x] Painel admin (admin e super user) lista os reports com filtros (exercício, usuário, período)
+- [ ] Botão "reportar problema" na tela do exercício e lista de reports no painel *(cliente)*
+
 ### Modo escuro
 - [ ] Tema escuro completo para mobile e web
 - [ ] Detecção automática do tema do sistema operacional

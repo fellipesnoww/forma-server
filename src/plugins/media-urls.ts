@@ -13,6 +13,7 @@ const MEDIA_URL_FIELDS = new Set([
   'photoUrl',
   'photoUrls',
   'mediaUrl',
+  'femaleMediaUrl',
   'iconUrl',
 ]);
 

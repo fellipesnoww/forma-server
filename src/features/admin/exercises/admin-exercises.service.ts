@@ -37,6 +37,7 @@ function toExerciseDto(row: AdminExerciseRow): AdminExerciseDto {
       : null,
     isActive: row.isActive,
     mediaUrl: row.mediaUrl,
+    femaleMediaUrl: row.femaleMediaUrl,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -65,6 +66,7 @@ function exerciseSnapshot(row: AdminExerciseRow) {
     muscleGroup: row.muscleGroup?.slug ?? null,
     isActive: row.isActive,
     mediaUrl: row.mediaUrl,
+    femaleMediaUrl: row.femaleMediaUrl,
   };
 }
 
@@ -109,7 +111,10 @@ export async function addAdminExercise(
   actorId: string,
   input: CreateAdminExerciseBody,
 ): Promise<AdminExerciseDto> {
-  const mediaUrl = input.media ? await uploadCatalogMedia(input.media) : null;
+  const [mediaUrl, femaleMediaUrl] = await Promise.all([
+    input.media ? uploadCatalogMedia(input.media) : null,
+    input.femaleMedia ? uploadCatalogMedia(input.femaleMedia) : null,
+  ]);
 
   return runAudited(actorId, async (tx, log) => {
     await assertExerciseNameFree(tx, input.name);
@@ -119,6 +124,7 @@ export async function addAdminExercise(
       muscleGroupId: (await resolveMuscleGroupId(tx, input.muscleGroupSlug)) ?? null,
       isActive: input.isActive,
       mediaUrl,
+      femaleMediaUrl,
     });
 
     await log({
@@ -147,7 +153,10 @@ export async function editAdminExercise(
   id: string,
   input: UpdateAdminExerciseBody,
 ): Promise<AdminExerciseDto> {
-  const uploadedUrl = input.media ? await uploadCatalogMedia(input.media) : undefined;
+  const [uploadedUrl, uploadedFemaleUrl] = await Promise.all([
+    input.media ? uploadCatalogMedia(input.media) : undefined,
+    input.femaleMedia ? uploadCatalogMedia(input.femaleMedia) : undefined,
+  ]);
 
   return runAudited(actorId, async (tx, log) => {
     const before = await requireExercise(tx, id);
@@ -163,6 +172,8 @@ export async function editAdminExercise(
         : { muscleGroupId: await resolveMuscleGroupId(tx, input.muscleGroupSlug) }),
       ...(uploadedUrl === undefined ? {} : { mediaUrl: uploadedUrl }),
       ...(input.mediaUrl === null ? { mediaUrl: null } : {}),
+      ...(uploadedFemaleUrl === undefined ? {} : { femaleMediaUrl: uploadedFemaleUrl }),
+      ...(input.femaleMediaUrl === null ? { femaleMediaUrl: null } : {}),
     });
 
     await log({
